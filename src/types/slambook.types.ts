@@ -14,6 +14,9 @@ export interface CampusFaculty {
 
 export interface CampusConfig {
   slug: string;
+  universityId: string;
+  universityName: string;
+  campusName: string;
   name: string;
   shortName: string;
   allowedDomain: string;
@@ -39,6 +42,8 @@ export interface DailySubmission {
   faculty_id: string;
   user_id: string;
   user_email: string;
+  username?: string;
+  user_avatar_url?: string;
   song?: string;
   song_image_url?: string;
   artist?: string;
@@ -67,7 +72,16 @@ export interface AuthUser {
   id: string;
   email: string;
   name?: string;
+  username?: string;
+  avatarUrl?: string;
   isMock?: boolean;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  avatarUrl: string;
 }
 
 export interface DailyVoteInput {
@@ -79,4 +93,15 @@ export interface DailyVoteInput {
   artistImageUrl?: string;
   movie?: string;
   movieImageUrl?: string;
+}
+
+export interface MatchingVote {
+  category: 'song' | 'artist' | 'movie';
+  itemTitle: string;
+  voterCount: number;
+  voters: Array<{
+    userId: string;
+    displayName: string;
+    avatarUrl?: string;
+  }>;
 }

@@ -1,8 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { CampusConfig, FacultyRankings, Timeframe } from '@/types/slambook.types';
+import {
+  CampusConfig,
+  FacultyRankings,
+  Timeframe,
+  DailySubmission,
+  MatchingVote,
+  AuthUser,
+} from '@/types/slambook.types';
 import { rankingsService } from '@/services/rankings.service';
+import { authService } from '@/services/auth.service';
 
 interface FacultyPanelProps {
   campus: CampusConfig;
@@ -17,6 +25,10 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
     movies: [],
     totalVotes: 0,
   });
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [userSubmission, setUserSubmission] = useState<DailySubmission | null>(null);
+  const [matchingVotes, setMatchingVotes] = useState<MatchingVote[]>([]);
+  const [showMatches, setShowMatches] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const currentFaculty = campus.faculties.find((f) => f.id === facultyId) || {
@@ -25,7 +37,7 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
     shortName: facultyId,
   };
 
-  const fetchRankings = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const data = await rankingsService.getRankings(
@@ -34,34 +46,54 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
         timeframe
       );
       setRankings(data);
+
+      const user = await authService.getCurrentUser();
+      setCurrentUser(user);
+
+      if (user) {
+        const sub = await rankingsService.getUserTodaySubmission(campus.slug, user.id);
+        setUserSubmission(sub);
+
+        if (sub) {
+          const matches = await rankingsService.getMatchingVotes(campus.slug, facultyId, sub);
+          setMatchingVotes(matches);
+        } else {
+          setMatchingVotes([]);
+        }
+      } else {
+        setUserSubmission(null);
+        setMatchingVotes([]);
+      }
     } catch (e) {
-      console.error('Error fetching rankings:', e);
+      console.error('Error fetching rankings/user votes:', e);
     } finally {
       setLoading(false);
     }
   }, [campus.slug, facultyId, timeframe]);
 
   useEffect(() => {
-    fetchRankings();
-  }, [fetchRankings]);
+    loadData();
+    const unsub = authService.onAuthStateChange(() => {
+      loadData();
+    });
+    return unsub;
+  }, [loadData]);
 
   return (
-    <aside className="w-full h-full flex flex-col bg-[#0b101d]/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 shadow-2xl text-white overflow-hidden font-sans">
-      {/* Header de la Facultad */}
-      <header className="pb-4 mb-4 border-b border-white/10 flex flex-col gap-1">
-        <div className="flex items-center justify-between text-[11px] font-semibold text-blue-400 tracking-wider uppercase">
+    <aside className="w-full h-full flex flex-col bg-white border border-neutral-200 rounded-xl p-5 text-neutral-900 overflow-hidden font-sans">
+      {/* Header sin bordes ni fondos en labels */}
+      <header className="pb-3 mb-3 border-b border-neutral-100 flex flex-col gap-0.5">
+        <div className="flex items-center justify-between text-xs text-neutral-400">
           <span>{campus.shortName}</span>
-          <span className="bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2 py-0.5 rounded-full">
-            {rankings.totalVotes} votos registrados
-          </span>
+          <span className="text-neutral-500 font-medium">{rankings.totalVotes} votos</span>
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-white truncate">
+        <h1 className="text-lg font-semibold text-neutral-900 truncate">
           {currentFaculty.name}
         </h1>
       </header>
 
-      {/* Control Segmentado de Periodo estilo Apple */}
-      <nav className="p-1 bg-black/40 border border-white/5 rounded-2xl grid grid-cols-3 gap-1 mb-5">
+      {/* Pestañas minimalistas con acento cobrizo casi oscuro #8A4222 */}
+      <nav className="flex items-center gap-6 border-b border-neutral-100 pb-2 mb-4 text-xs">
         {(['day', 'week', 'all'] as const).map((tab) => {
           const isActive = timeframe === tab;
           const label = tab === 'day' ? 'Hoy' : tab === 'week' ? 'Semana' : 'Histórico';
@@ -70,66 +102,153 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
               key={tab}
               type="button"
               onClick={() => setTimeframe(tab)}
-              className={`py-1.5 px-3 rounded-xl text-xs font-semibold transition-all ${
+              className={`pb-1 font-medium transition-colors relative ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'text-[#8A4222] font-semibold'
+                  : 'text-neutral-400 hover:text-neutral-800'
               }`}
             >
               {label}
+              {isActive && (
+                <span className="absolute bottom-[-9px] left-0 right-0 h-[2px] bg-[#8A4222]" />
+              )}
             </button>
           );
         })}
       </nav>
 
-      {/* Listas de Rankings con Fotografías y Portadas */}
-      <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar">
+      {/* Contenido scrolleable */}
+      <div className="flex-1 overflow-y-auto space-y-5 pr-1 text-xs">
+        {/* SECCIÓN: Voto del usuario hoy y coincidencias */}
+        {currentUser && (
+          <section className="p-3.5 bg-neutral-50 border border-neutral-100 rounded-lg space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-neutral-800">
+                Tu voto de hoy
+              </span>
+              {userSubmission && matchingVotes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowMatches(!showMatches)}
+                  className="text-xs text-[#8A4222] hover:underline font-medium"
+                >
+                  {showMatches ? 'Ocultar coincidencias' : `Ver quién votó lo mismo (${matchingVotes.reduce((acc, m) => acc + m.voterCount, 0)})`}
+                </button>
+              )}
+            </div>
+
+            {userSubmission ? (
+              <div className="space-y-1.5 text-neutral-600">
+                {userSubmission.song && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-neutral-400">Canción:</span>
+                    <span className="font-medium text-neutral-900 truncate">
+                      {userSubmission.song}
+                    </span>
+                  </div>
+                )}
+                {userSubmission.artist && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-neutral-400">Artista:</span>
+                    <span className="font-medium text-neutral-900 truncate">
+                      {userSubmission.artist}
+                    </span>
+                  </div>
+                )}
+                {userSubmission.movie && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-neutral-400">Película:</span>
+                    <span className="font-medium text-neutral-900 truncate">
+                      {userSubmission.movie}
+                    </span>
+                  </div>
+                )}
+
+                {/* Detalle de coincidencias con otros estudiantes */}
+                {showMatches && matchingVotes.length > 0 && (
+                  <div className="mt-3 pt-2.5 border-t border-neutral-200/60 space-y-2">
+                    <span className="text-xs font-medium text-[#8A4222] block">
+                      Estudiantes que votaron lo mismo:
+                    </span>
+                    {matchingVotes.map((mv) => (
+                      <div key={mv.category} className="space-y-1 pl-1">
+                        <span className="text-[11px] text-neutral-500 block">
+                          En {mv.category === 'song' ? 'canción' : mv.category === 'artist' ? 'artista' : 'película'}: &ldquo;{mv.itemTitle}&rdquo;
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {mv.voters.map((v) => (
+                            <div
+                              key={v.userId}
+                              className="flex items-center gap-1.5 text-[11px] text-neutral-800"
+                            >
+                              {v.avatarUrl ? (
+                                <img
+                                  src={v.avatarUrl}
+                                  alt={v.displayName}
+                                  className="w-4 h-4 rounded-full object-cover"
+                                />
+                              ) : (
+                                <span className="w-4 h-4 rounded-full bg-neutral-200 text-neutral-600 flex items-center justify-center text-[9px] font-bold">
+                                  {v.displayName[0]?.toUpperCase()}
+                                </span>
+                              )}
+                              <span>{v.displayName}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-neutral-400 text-xs">
+                Aún no has registrado tu voto hoy.
+              </p>
+            )}
+          </section>
+        )}
+
         {loading ? (
-          <div className="py-16 text-center text-slate-500 text-sm">
-            Cargando ranking en vivo...
+          <div className="py-12 text-center text-neutral-400 text-xs">
+            Cargando...
           </div>
         ) : (
           <>
-            {/* 1. CANCIONES */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
-                <span>Top Canciones</span>
-                <span className="text-[11px] font-normal text-slate-500">Votos</span>
-              </div>
+            {/* TOP CANCIONES */}
+            <section className="space-y-2.5">
+              <span className="font-semibold text-neutral-700 block">
+                Top Canciones
+              </span>
               {rankings.songs.length === 0 ? (
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-slate-500 text-xs text-center">
-                  Sin votos para este periodo
-                </div>
+                <p className="text-neutral-400 italic">Sin registros</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {rankings.songs.map((song, idx) => (
                     <div
                       key={song.name}
-                      className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all group"
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-50 transition-colors"
                     >
-                      <span className="text-sm font-bold text-slate-500 w-4 text-center">
+                      <span className="w-4 text-center font-semibold text-neutral-400">
                         {idx + 1}
                       </span>
                       {song.imageUrl ? (
                         <img
                           src={song.imageUrl}
                           alt={song.name}
-                          className="w-11 h-11 rounded-xl object-cover border border-white/10 shadow"
+                          className="w-8 h-8 rounded object-cover border border-neutral-100 flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-11 h-11 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-sm">
+                        <div className="w-8 h-8 rounded bg-neutral-100 flex items-center justify-center text-neutral-400 font-medium flex-shrink-0">
                           ♪
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-white truncate group-hover:text-blue-300">
+                        <div className="font-medium text-neutral-900 truncate">
                           {song.name}
                         </div>
-                        <div className="text-[11px] text-slate-400">
-                          Canción más votada
-                        </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-full bg-white/10 text-white font-semibold text-xs border border-white/10">
+                      <span className="font-medium text-neutral-500">
                         {song.count}
                       </span>
                     </div>
@@ -138,46 +257,40 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
               )}
             </section>
 
-            {/* 2. ARTISTAS */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
-                <span>Top Artistas</span>
-                <span className="text-[11px] font-normal text-slate-500">Votos</span>
-              </div>
+            {/* TOP ARTISTAS */}
+            <section className="space-y-2.5">
+              <span className="font-semibold text-neutral-700 block">
+                Top Artistas
+              </span>
               {rankings.artists.length === 0 ? (
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-slate-500 text-xs text-center">
-                  Sin votos para este periodo
-                </div>
+                <p className="text-neutral-400 italic">Sin registros</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {rankings.artists.map((artist, idx) => (
                     <div
                       key={artist.name}
-                      className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all group"
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-50 transition-colors"
                     >
-                      <span className="text-sm font-bold text-slate-500 w-4 text-center">
+                      <span className="w-4 text-center font-semibold text-neutral-400">
                         {idx + 1}
                       </span>
                       {artist.imageUrl ? (
                         <img
                           src={artist.imageUrl}
                           alt={artist.name}
-                          className="w-11 h-11 rounded-full object-cover border border-white/10 shadow"
+                          className="w-8 h-8 rounded-full object-cover border border-neutral-100 flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-sm">
+                        <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 font-medium flex-shrink-0">
                           ★
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-white truncate group-hover:text-blue-300">
+                        <div className="font-medium text-neutral-900 truncate">
                           {artist.name}
                         </div>
-                        <div className="text-[11px] text-slate-400">
-                          Artista favorito
-                        </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-full bg-white/10 text-white font-semibold text-xs border border-white/10">
+                      <span className="font-medium text-neutral-500">
                         {artist.count}
                       </span>
                     </div>
@@ -186,46 +299,40 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
               )}
             </section>
 
-            {/* 3. PELÍCULAS */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
-                <span>Top Películas</span>
-                <span className="text-[11px] font-normal text-slate-500">Votos</span>
-              </div>
+            {/* TOP PELÍCULAS */}
+            <section className="space-y-2.5">
+              <span className="font-semibold text-neutral-700 block">
+                Top Películas
+              </span>
               {rankings.movies.length === 0 ? (
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-slate-500 text-xs text-center">
-                  Sin votos para este periodo
-                </div>
+                <p className="text-neutral-400 italic">Sin registros</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {rankings.movies.map((movie, idx) => (
                     <div
                       key={movie.name}
-                      className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all group"
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-50 transition-colors"
                     >
-                      <span className="text-sm font-bold text-slate-500 w-4 text-center">
+                      <span className="w-4 text-center font-semibold text-neutral-400">
                         {idx + 1}
                       </span>
                       {movie.imageUrl ? (
                         <img
                           src={movie.imageUrl}
                           alt={movie.name}
-                          className="w-9 h-12 rounded-lg object-cover border border-white/10 shadow flex-shrink-0"
+                          className="w-7 h-9 rounded object-cover border border-neutral-100 flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-9 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs flex-shrink-0">
+                        <div className="w-7 h-9 rounded bg-neutral-100 flex items-center justify-center text-neutral-400 font-medium flex-shrink-0">
                           🎬
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-white truncate group-hover:text-blue-300">
+                        <div className="font-medium text-neutral-900 truncate">
                           {movie.name}
                         </div>
-                        <div className="text-[11px] text-slate-400">
-                          Película destacada
-                        </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-full bg-white/10 text-white font-semibold text-xs border border-white/10">
+                      <span className="font-medium text-neutral-500">
                         {movie.count}
                       </span>
                     </div>

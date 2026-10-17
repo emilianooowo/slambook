@@ -83,7 +83,7 @@ export default function VoteModal({
   const handleGoogleLogin = async () => {
     try {
       setIsError(false);
-      setStatusMessage('Conectando con Google...');
+      setStatusMessage('Conectando...');
       await authService.signInWithGoogle(campus.allowedDomain);
       await loadUserData();
       setStatusMessage(null);
@@ -105,7 +105,7 @@ export default function VoteModal({
 
     if (!song && !artist && !movie) {
       setIsError(true);
-      setStatusMessage('Selecciona al menos una canción, artista o película.');
+      setStatusMessage('Elige al menos una categoría.');
       return;
     }
 
@@ -128,15 +128,15 @@ export default function VoteModal({
         currentUser
       );
 
-      setStatusMessage('¡Voto registrado con éxito!');
+      setStatusMessage('Voto guardado');
       onVoteSubmitted();
       setTimeout(() => {
         onClose();
         setStatusMessage(null);
-      }, 900);
+      }, 700);
     } catch (err: any) {
       setIsError(true);
-      setStatusMessage(err.message || 'Error al enviar voto.');
+      setStatusMessage(err.message || 'Error al guardar');
     } finally {
       setLoading(false);
     }
@@ -145,45 +145,39 @@ export default function VoteModal({
   const hasAtLeastOneSelection = Boolean(song || artist || movie);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/25 backdrop-blur-[2px]">
       <div
-        className="relative w-full max-w-lg bg-[#0c1222]/95 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl text-white overflow-hidden max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-md bg-white border border-neutral-200 rounded-xl p-6 shadow-xl text-neutral-900 max-h-[90vh] flex flex-col"
         role="dialog"
         aria-modal="true"
       >
         {/* Cabecera del Modal */}
-        <div className="flex items-start justify-between pb-4 border-b border-white/10 mb-5">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-white">
-              Registrar voto del día
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Puedes votar por una sola categoría o todas a la vez.
-            </p>
-          </div>
+        <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-4">
+          <h2 className="text-base font-semibold text-neutral-900">
+            Registrar voto del día
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+            className="text-neutral-400 hover:text-neutral-900 transition-colors text-sm px-1"
           >
             ✕
           </button>
         </div>
 
-        {/* Contenido scrolleable */}
-        <div className="flex-1 overflow-y-auto space-y-5 pr-1">
-          {/* Selector de Facultad */}
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+          {/* Selector de Facultad - Sin fondos ni bordes en labels */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-300 tracking-wide uppercase mb-2">
-              Facultad a representar
-            </label>
+            <span className="block text-xs font-medium text-neutral-700 mb-1.5">
+              Facultad
+            </span>
             <select
               value={selectedFaculty}
               onChange={(e) => setSelectedFaculty(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-900/80 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-[#8A4222]"
             >
               {campus.faculties.map((f) => (
-                <option key={f.id} value={f.id} className="bg-slate-900 text-white">
+                <option key={f.id} value={f.id}>
                   {f.name} ({f.shortName})
                 </option>
               ))}
@@ -191,17 +185,14 @@ export default function VoteModal({
           </div>
 
           {!currentUser ? (
-            <div className="p-5 rounded-2xl bg-blue-950/30 border border-blue-500/20 text-center space-y-3">
-              <div className="text-sm font-semibold text-white">
-                Acceso institucional requerido
-              </div>
-              <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                Solo estudiantes con cuenta @{campus.allowedDomain} pueden participar en los rankings.
+            <div className="p-4 rounded-lg bg-neutral-50 border border-neutral-200 text-center space-y-3">
+              <p className="text-xs text-neutral-600">
+                Se requiere correo institucional @{campus.allowedDomain}
               </p>
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="w-full py-2.5 px-4 bg-white text-slate-950 font-semibold rounded-xl hover:bg-slate-100 transition-colors text-sm shadow-md"
+                className="w-full py-2 px-3 bg-[#8A4222] text-white font-medium rounded-lg hover:bg-[#72361b] transition-colors text-xs"
               >
                 Continuar con Google (@{campus.allowedDomain})
               </button>
@@ -209,77 +200,63 @@ export default function VoteModal({
                 <button
                   type="button"
                   onClick={handleSimulateLogin}
-                  className="w-full py-2 px-3 bg-white/10 hover:bg-white/15 text-slate-300 rounded-xl text-xs transition-colors"
+                  className="w-full py-1.5 px-3 bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100 rounded-lg text-xs transition-colors"
                 >
-                  [Demo Local] Simular cuenta @{campus.allowedDomain}
+                  [Demo] Simular sesión @{campus.allowedDomain}
                 </button>
               )}
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-400 px-1">
-                <span>Cuenta: {currentUser.email}</span>
-                {todaySubmission && (
-                  <span className="text-blue-400 font-medium">
-                    ✓ Ya tienes registros hoy
-                  </span>
-                )}
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              <div className="text-xs text-neutral-500">
+                Sesión: {currentUser.email}
               </div>
 
-              {/* Categoría 1: Canción */}
-              <div className="p-3.5 bg-white/5 border border-white/5 rounded-2xl space-y-2">
-                <MediaSearchInput
-                  label="Canción favorita de hoy"
-                  type="song"
-                  value={song}
-                  imageUrl={songImageUrl}
-                  onChange={(val, img) => {
-                    setSong(val);
-                    setSongImageUrl(img);
-                  }}
-                  placeholder="Buscar canción en Apple Music..."
-                  disabled={loading}
-                />
-              </div>
+              <MediaSearchInput
+                label="Canción favorita"
+                type="song"
+                value={song}
+                imageUrl={songImageUrl}
+                onChange={(val, img) => {
+                  setSong(val);
+                  setSongImageUrl(img);
+                }}
+                placeholder="Buscar..."
+                disabled={loading}
+              />
 
-              {/* Categoría 2: Artista */}
-              <div className="p-3.5 bg-white/5 border border-white/5 rounded-2xl space-y-2">
-                <MediaSearchInput
-                  label="Artista del momento"
-                  type="artist"
-                  value={artist}
-                  imageUrl={artistImageUrl}
-                  onChange={(val, img) => {
-                    setArtist(val);
-                    setArtistImageUrl(img);
-                  }}
-                  placeholder="Buscar artista o banda..."
-                  disabled={loading}
-                />
-              </div>
+              <MediaSearchInput
+                label="Artista favorito"
+                type="artist"
+                value={artist}
+                imageUrl={artistImageUrl}
+                onChange={(val, img) => {
+                  setArtist(val);
+                  setArtistImageUrl(img);
+                }}
+                placeholder="Buscar..."
+                disabled={loading}
+              />
 
-              {/* Categoría 3: Película */}
-              <div className="p-3.5 bg-white/5 border border-white/5 rounded-2xl space-y-2">
-                <MediaSearchInput
-                  label="Película recomendada"
-                  type="movie"
-                  value={movie}
-                  imageUrl={movieImageUrl}
-                  onChange={(val, img) => {
-                    setMovie(val);
-                    setMovieImageUrl(img);
-                  }}
-                  placeholder="Buscar película en Apple TV / iTunes..."
-                  disabled={loading}
-                />
-              </div>
+              <MediaSearchInput
+                label="Película favorita"
+                type="movie"
+                value={movie}
+                imageUrl={movieImageUrl}
+                onChange={(val, img) => {
+                  setMovie(val);
+                  setMovieImageUrl(img);
+                }}
+                placeholder="Buscar..."
+                disabled={loading}
+              />
 
               {statusMessage && (
                 <div
-                  className={`p-3 rounded-xl text-xs font-semibold ${
+                  className={`p-2.5 rounded-lg text-xs font-medium ${
                     isError
-                      ? 'bg-red-500/20 border border-red-500/30 text-red-200'
-                      : 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-200'
+                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                   }`}
                 >
                   {statusMessage}
@@ -289,13 +266,9 @@ export default function VoteModal({
               <button
                 type="submit"
                 disabled={loading || !hasAtLeastOneSelection}
-                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 font-semibold rounded-xl text-sm transition-all shadow-lg shadow-blue-600/30 text-white"
+                className="w-full py-2.5 px-4 bg-[#8A4222] hover:bg-[#72361b] disabled:bg-neutral-200 disabled:text-neutral-400 font-medium rounded-lg text-xs text-white transition-colors"
               >
-                {loading
-                  ? 'Guardando voto...'
-                  : hasAtLeastOneSelection
-                  ? 'Guardar mi voto diario'
-                  : 'Elige al menos 1 elemento'}
+                {loading ? 'Guardando...' : 'Enviar voto'}
               </button>
             </form>
           )}

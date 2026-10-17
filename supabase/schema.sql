@@ -1,17 +1,32 @@
 -- ==============================================================================
--- SLAMBOOK DATABASE SCHEMA & RPC FUNCTIONS (SUPABASE POSTGRESQL) - V2 APPLE UI
+-- SLAMBOOK DATABASE SCHEMA & SECURITY CONTROLS (SUPABASE POSTGRESQL) - V3
 -- ==============================================================================
 
--- 1. Extensión para UUIDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Tabla de Envíos Diarios (con soporte para votos por separado y carátulas)
+-- 1. Tabla de Perfiles de Usuario
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  username TEXT NOT NULL,
+  avatar_url TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Restricciones de longitud para seguridad contra desbordamientos
+  CONSTRAINT profiles_username_length_check CHECK (char_length(username) >= 3 AND char_length(username) <= 40),
+  CONSTRAINT profiles_email_length_check CHECK (char_length(email) <= 120),
+  CONSTRAINT profiles_avatar_length_check CHECK (avatar_url IS NULL OR char_length(avatar_url) <= 500)
+);
+
+-- 2. Tabla de Envíos Diarios
 CREATE TABLE IF NOT EXISTS public.daily_submissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   campus_slug TEXT NOT NULL,
   faculty_id TEXT NOT NULL,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   user_email TEXT NOT NULL,
+  username TEXT,
+  user_avatar_url TEXT,
   song TEXT,
   song_image_url TEXT,
   artist TEXT,
@@ -21,11 +36,22 @@ CREATE TABLE IF NOT EXISTS public.daily_submissions (
   submission_date DATE NOT NULL DEFAULT CURRENT_DATE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-  -- Restricción estricta: Máximo 1 registro por usuario por día (se actualiza mediante upsert)
-  CONSTRAINT daily_submissions_user_date_key UNIQUE (user_id, submission_date)
+  -- Restricción estricta: Máximo 1 registro por usuario por día
+  CONSTRAINT daily_submissions_user_date_key UNIQUE (user_id, submission_date),
+
+  -- Restricciones defensivas de longitud de buffers/strings contra payloads anómalos
+  CONSTRAINT check_lengths CHECK (
+    char_length(campus_slug) <= 60 AND
+    char_length(faculty_id) <= 60 AND
+    char_length(user_email) <= 120 AND
+    (song IS NULL OR char_length(song) <= 150) AND
+    (artist IS NULL OR char_length(artist) <= 150) AND
+    (movie IS NULL OR char_length(movie) <= 150) AND
+    (username IS NULL OR char_length(username) <= 40)
+  )
 );
 
--- 3. Índices para optimizar consultas de rankings y verificación de voto
+-- 3. Índices de Rendimiento
 CREATE INDEX IF NOT EXISTS idx_submissions_campus_faculty_date 
   ON public.daily_submissions (campus_slug, faculty_id, submission_date);
 
@@ -33,36 +59,33 @@ CREATE INDEX IF NOT EXISTS idx_submissions_user_date
   ON public.daily_submissions (user_id, submission_date);
 
 -- 4. Habilitar Seguridad a Nivel de Fila (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.daily_submissions ENABLE ROW LEVEL SECURITY;
 
--- Política de lectura pública
+-- Políticas de Perfiles
+DROP POLICY IF EXISTS "Lectura pública de perfiles" ON public.profiles;
+CREATE POLICY "Lectura pública de perfiles" ON public.profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Edición de perfil por su propio usuario" ON public.profiles;
+CREATE POLICY "Edición de perfil por su propio usuario" ON public.profiles FOR ALL USING (auth.uid() = id);
+
+-- Políticas de Envíos Diarios
 DROP POLICY IF EXISTS "Lectura pública de rankings" ON public.daily_submissions;
-CREATE POLICY "Lectura pública de rankings" 
-  ON public.daily_submissions 
-  FOR SELECT 
-  USING (true);
+CREATE POLICY "Lectura pública de rankings" ON public.daily_submissions FOR SELECT USING (true);
 
--- Política de inserción / actualización
-DROP POLICY IF EXISTS "Inserción diaria restringida a usuarios institucionales" ON public.daily_submissions;
-CREATE POLICY "Inserción diaria restringida a usuarios institucionales" 
-  ON public.daily_submissions 
-  FOR INSERT 
-  WITH CHECK (
-    auth.uid() = user_id
-    AND submission_date = CURRENT_DATE
-    AND user_email LIKE '%@unach.mx'
-  );
+DROP POLICY IF EXISTS "Inserción diaria restringida" ON public.daily_submissions;
+CREATE POLICY "Inserción diaria restringida" ON public.daily_submissions FOR INSERT WITH CHECK (
+  auth.uid() = user_id
+  AND submission_date = CURRENT_DATE
+);
 
-DROP POLICY IF EXISTS "Actualización diaria del propio usuario" ON public.daily_submissions;
-CREATE POLICY "Actualización diaria del propio usuario"
-  ON public.daily_submissions
-  FOR UPDATE
-  USING (
-    auth.uid() = user_id
-    AND submission_date = CURRENT_DATE
-  );
+DROP POLICY IF EXISTS "Actualización diaria propia" ON public.daily_submissions;
+CREATE POLICY "Actualización diaria propia" ON public.daily_submissions FOR UPDATE USING (
+  auth.uid() = user_id
+  AND submission_date = CURRENT_DATE
+);
 
--- 5. Función RPC get_faculty_rankings (con carátulas en alta resolución)
+-- 5. Función RPC get_faculty_rankings
 CREATE OR REPLACE FUNCTION public.get_faculty_rankings(
   p_campus_slug TEXT,
   p_faculty_id TEXT,
@@ -95,7 +118,7 @@ BEGIN
     AND faculty_id = p_faculty_id
     AND (p_timeframe = 'all' OR submission_date >= v_start_date);
 
-  -- Top Canciones con Carátula
+  -- Top Canciones
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(
@@ -122,7 +145,7 @@ BEGIN
     LIMIT 5
   ) sub;
 
-  -- Top Artistas con Fotografía
+  -- Top Artistas
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(
@@ -149,7 +172,7 @@ BEGIN
     LIMIT 5
   ) sub;
 
-  -- Top Películas con Portada
+  -- Top Películas
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(

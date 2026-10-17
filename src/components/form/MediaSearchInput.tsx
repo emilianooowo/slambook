@@ -12,7 +12,6 @@ interface MediaSearchInputProps {
   onChange: (value: string, imageUrl?: string) => void;
   disabled?: boolean;
   placeholder?: string;
-  required?: boolean;
 }
 
 export default function MediaSearchInput({
@@ -78,7 +77,7 @@ export default function MediaSearchInput({
       } finally {
         setLoading(false);
       }
-    }, 300);
+    }, 280);
 
     return () => {
       clearTimeout(timer);
@@ -104,45 +103,43 @@ export default function MediaSearchInput({
   };
 
   return (
-    <div className="w-full text-xs font-sans" ref={containerRef}>
-      <label className="block text-[11px] font-semibold text-slate-300 tracking-wide uppercase mb-1.5">
+    <div className="w-full text-xs" ref={containerRef}>
+      {/* Label estrictamente sin fondo y sin bordeado */}
+      <span className="block text-xs font-medium text-neutral-700 mb-1.5">
         {label}
-      </label>
+      </span>
 
       {value ? (
-        // Estado seleccionado estilo Apple Music / Apple TV
-        <div className="flex items-center gap-3 p-2 bg-slate-900/80 border border-blue-500/30 rounded-xl text-white">
+        // Estado seleccionado minimalista
+        <div className="flex items-center gap-3 p-2.5 bg-white border border-neutral-200 rounded-lg">
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={value}
-              className={`w-10 h-10 object-cover border border-white/10 ${
-                type === 'artist' ? 'rounded-full' : 'rounded-lg'
+              className={`w-9 h-9 object-cover border border-neutral-100 ${
+                type === 'artist' ? 'rounded-full' : 'rounded-md'
               }`}
             />
           ) : (
             <div
-              className={`w-10 h-10 bg-slate-800 flex items-center justify-center text-slate-400 font-bold ${
-                type === 'artist' ? 'rounded-full' : 'rounded-lg'
+              className={`w-9 h-9 bg-neutral-100 flex items-center justify-center text-neutral-400 text-xs font-semibold ${
+                type === 'artist' ? 'rounded-full' : 'rounded-md'
               }`}
             >
               {type === 'song' ? '♪' : type === 'artist' ? '★' : '🎬'}
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold truncate text-white">
+            <div className="text-sm font-medium text-neutral-900 truncate">
               {value}
-            </div>
-            <div className="text-[11px] text-slate-400 capitalize">
-              {type === 'song' ? 'Canción' : type === 'artist' ? 'Artista' : 'Película'} seleccionada
             </div>
           </div>
           {!disabled && (
             <button
               type="button"
               onClick={handleClear}
-              className="p-1.5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-colors"
-              title="Cambiar selección"
+              className="text-xs text-neutral-400 hover:text-[#8A4222] transition-colors px-1"
+              title="Cambiar"
             >
               ✕
             </button>
@@ -159,47 +156,48 @@ export default function MediaSearchInput({
               if (results.length > 0) setIsOpen(true);
             }}
             placeholder={placeholder}
-            className="w-full px-3.5 py-2.5 bg-slate-900/60 border border-white/10 rounded-xl text-white placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+            maxLength={100}
+            className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-neutral-900 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-[#8A4222] transition-colors"
           />
 
           {loading && (
-            <div className="absolute right-3.5 top-3 text-[11px] text-blue-400 animate-pulse">
-              Buscando...
+            <div className="absolute right-3 top-2.5 text-xs text-neutral-400">
+              ...
             </div>
           )}
 
           {isOpen && results.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto bg-slate-900/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl p-1.5 space-y-1">
+            <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto bg-white border border-neutral-200 rounded-lg shadow-lg p-1 space-y-0.5">
               {results.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => handleSelect(item)}
-                  className="w-full flex items-center gap-3 p-2 rounded-xl text-left hover:bg-blue-600/30 transition-colors group"
+                  className="w-full flex items-center gap-3 p-2 rounded-md text-left hover:bg-neutral-50 transition-colors"
                 >
                   {item.imageUrl ? (
                     <img
                       src={item.imageUrl}
                       alt={item.title}
-                      className={`w-9 h-9 object-cover border border-white/10 flex-shrink-0 ${
-                        type === 'artist' ? 'rounded-full' : 'rounded-lg'
+                      className={`w-8 h-8 object-cover border border-neutral-100 flex-shrink-0 ${
+                        type === 'artist' ? 'rounded-full' : 'rounded'
                       }`}
                     />
                   ) : (
                     <div
-                      className={`w-9 h-9 bg-slate-800 flex items-center justify-center text-slate-400 text-xs font-bold flex-shrink-0 ${
-                        type === 'artist' ? 'rounded-full' : 'rounded-lg'
+                      className={`w-8 h-8 bg-neutral-100 flex items-center justify-center text-neutral-400 text-xs font-semibold flex-shrink-0 ${
+                        type === 'artist' ? 'rounded-full' : 'rounded'
                       }`}
                     >
                       {type === 'song' ? '♪' : type === 'artist' ? '★' : '🎬'}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-white truncate group-hover:text-blue-200">
+                    <div className="text-xs font-medium text-neutral-900 truncate">
                       {item.title}
                     </div>
                     {item.subtitle && (
-                      <div className="text-[11px] text-slate-400 truncate">
+                      <div className="text-[11px] text-neutral-500 truncate">
                         {item.subtitle}
                       </div>
                     )}
@@ -210,8 +208,8 @@ export default function MediaSearchInput({
           )}
 
           {isOpen && query.length >= 2 && !loading && results.length === 0 && (
-            <div className="absolute left-0 right-0 top-full z-50 mt-1 p-3 bg-slate-900/95 backdrop-blur-xl border border-white/15 rounded-2xl text-slate-400 text-xs">
-              No se encontraron resultados para &ldquo;{query}&rdquo;.
+            <div className="absolute left-0 right-0 top-full z-50 mt-1 p-3 bg-white border border-neutral-200 rounded-lg text-neutral-500 text-xs shadow-md">
+              Sin coincidencias
             </div>
           )}
         </div>

@@ -4,11 +4,13 @@ import {
   DailySubmission,
   DailyVoteInput,
   FacultyRankings,
+  MatchingVote,
   RankingItem,
   Timeframe,
 } from '@/types/slambook.types';
+import { sanitizeInput, sanitizeImageUrl, MAX_LENGTHS } from '@/lib/security';
 
-const MOCK_SUBMISSIONS_KEY = 'slambook_mock_submissions_v2';
+const MOCK_SUBMISSIONS_KEY = 'slambook_mock_submissions_v3';
 
 export function getTodayDateString(): string {
   const now = new Date();
@@ -40,7 +42,7 @@ class RankingsService {
       try {
         return JSON.parse(existing);
       } catch {
-        // En caso de error, regeneramos
+        // En caso de corrupción, reinicializamos
       }
     }
 
@@ -48,7 +50,6 @@ class RankingsService {
     const twoDaysAgo = getDateDaysAgoString(2);
     const fourDaysAgo = getDateDaysAgoString(4);
     const tenDaysAgo = getDateDaysAgoString(10);
-    const twentyDaysAgo = getDateDaysAgoString(20);
 
     const initialMock: DailySubmission[] = [
       // INGENIERÍA
@@ -58,6 +59,8 @@ class RankingsService {
         faculty_id: 'ingenieria',
         user_id: 'user-unach-10',
         user_email: 'carlos.m@unach.mx',
+        username: 'carlos_m',
+        user_avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=faces',
         song: 'Starboy (The Weeknd)',
         song_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bf/19/27/bf19273c-cbe4-8f49-556b-67a845a7ad86/16UMGIM86064.rgb.jpg/600x600bb.jpg',
         artist: 'The Weeknd',
@@ -73,12 +76,14 @@ class RankingsService {
         faculty_id: 'ingenieria',
         user_id: 'user-unach-11',
         user_email: 'valeria.r@unach.mx',
+        username: 'valeria_r',
+        user_avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces',
         song: 'Starboy (The Weeknd)',
         song_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bf/19/27/bf19273c-cbe4-8f49-556b-67a845a7ad86/16UMGIM86064.rgb.jpg/600x600bb.jpg',
         artist: 'Daft Punk',
         artist_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/98/9c/64989c72-c07a-24ce-55c3-11dc82ffcf19/886443927080.jpg/600x600bb.jpg',
-        movie: 'Oppenheimer',
-        movie_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Video126/v4/55/b2/89/55b28956-613b-28f0-1c00-60b6ae208be7/Universal_Oppenheimer_AppleTV_EST_KeyArt_4000x3000.jpg/600x600bb.jpg',
+        movie: 'Interstellar',
+        movie_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Video115/v4/ee/11/fb/ee11fb14-5f50-fa0c-5264-a690e0b3c20c/pr_source.lsr/600x600bb.jpg',
         submission_date: today,
         created_at: new Date().toISOString(),
       },
@@ -88,6 +93,8 @@ class RankingsService {
         faculty_id: 'ingenieria',
         user_id: 'user-unach-12',
         user_email: 'jorge.g@unach.mx',
+        username: 'jorge_ing',
+        user_avatar_url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=faces',
         song: 'De Música Ligera (Soda Stereo)',
         song_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/44/21/df/4421df65-e9f0-252c-c466-9c4c798031d6/886445582379.jpg/600x600bb.jpg',
         artist: 'Soda Stereo',
@@ -103,6 +110,8 @@ class RankingsService {
         faculty_id: 'ingenieria',
         user_id: 'user-unach-13',
         user_email: 'ana.l@unach.mx',
+        username: 'ana_luisa',
+        user_avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
         song: 'Starboy (The Weeknd)',
         song_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bf/19/27/bf19273c-cbe4-8f49-556b-67a845a7ad86/16UMGIM86064.rgb.jpg/600x600bb.jpg',
         artist: 'Daft Punk',
@@ -118,6 +127,8 @@ class RankingsService {
         faculty_id: 'ingenieria',
         user_id: 'user-unach-14',
         user_email: 'roberto.s@unach.mx',
+        username: 'roberto_s',
+        user_avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces',
         song: 'Bohemian Rhapsody (Queen)',
         song_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/3d/8c/59/3d8c593d-d421-4fa3-5e92-6a7f1a30f3a6/00602547202773.rgb.jpg/600x600bb.jpg',
         artist: 'Queen',
@@ -135,46 +146,14 @@ class RankingsService {
         faculty_id: 'arquitectura',
         user_id: 'user-arq-1',
         user_email: 'elena.arq@unach.mx',
+        username: 'elena_arq',
+        user_avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop&crop=faces',
         song: 'Ojitos Lindos (Bad Bunny)',
         song_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/3e/70/4e/3e704e90-c24c-9f6b-735a-8b8a68b57112/196626945068.jpg/600x600bb.jpg',
         artist: 'Bad Bunny',
         artist_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/3e/70/4e/3e704e90-c24c-9f6b-735a-8b8a68b57112/196626945068.jpg/600x600bb.jpg',
         movie: 'Parasite',
         movie_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Video123/v4/36/53/7d/36537dbf-5db7-0136-1262-1cf7bbd22223/pr_source.jpg/600x600bb.jpg',
-        submission_date: today,
-        created_at: new Date().toISOString(),
-      },
-
-      // CONTADURÍA (FCA)
-      {
-        id: 'sub-fca-1',
-        campus_slug: 'unach-tuxtla',
-        faculty_id: 'contaduria',
-        user_id: 'user-fca-1',
-        user_email: 'fernando.fca@unach.mx',
-        song: 'La Incondicional (Luis Miguel)',
-        song_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/cb/20/33/cb2033bc-1f55-6b66-e886-4f7f6a735c02/090317379569.jpg/600x600bb.jpg',
-        artist: 'Luis Miguel',
-        artist_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/cb/20/33/cb2033bc-1f55-6b66-e886-4f7f6a735c02/090317379569.jpg/600x600bb.jpg',
-        movie: 'Oppenheimer',
-        movie_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Video126/v4/55/b2/89/55b28956-613b-28f0-1c00-60b6ae208be7/Universal_Oppenheimer_AppleTV_EST_KeyArt_4000x3000.jpg/600x600bb.jpg',
-        submission_date: today,
-        created_at: new Date().toISOString(),
-      },
-
-      // LENGUAS
-      {
-        id: 'sub-len-1',
-        campus_slug: 'unach-tuxtla',
-        faculty_id: 'lenguas',
-        user_id: 'user-len-1',
-        user_email: 'marian.len@unach.mx',
-        song: 'Cruel Summer (Taylor Swift)',
-        song_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/09/b3/ef/09b3ef50-ec25-ee86-077d-78ebc6e24694/22UMGIM97187.rgb.jpg/600x600bb.jpg',
-        artist: 'Taylor Swift',
-        artist_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/09/b3/ef/09b3ef50-ec25-ee86-077d-78ebc6e24694/22UMGIM97187.rgb.jpg/600x600bb.jpg',
-        movie: 'El Viaje de Chihiro',
-        movie_image_url: 'https://is1-ssl.mzstatic.com/image/thumb/Video124/v4/05/65/59/056559d2-7c39-38b8-07e1-b4f0b240578d/SpiritedAway_KeyArt_iTunes_2000x3000.jpg/600x600bb.jpg',
         submission_date: today,
         created_at: new Date().toISOString(),
       },
@@ -250,7 +229,6 @@ class RankingsService {
 
       const { data, error } = await query;
       if (error || !data) {
-        console.error('Error fetching rankings from Supabase:', error);
         return { songs: [], artists: [], movies: [], totalVotes: 0 };
       }
 
@@ -275,8 +253,7 @@ class RankingsService {
         ),
         totalVotes: data.length,
       };
-    } catch (err) {
-      console.error('RankingsService exception:', err);
+    } catch {
       return { songs: [], artists: [], movies: [], totalVotes: 0 };
     }
   }
@@ -311,22 +288,104 @@ class RankingsService {
         .eq('submission_date', today)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching user today submission:', error);
-        return null;
-      }
-
+      if (error) return null;
       return data as DailySubmission | null;
-    } catch (err) {
-      console.error('getUserTodaySubmission exception:', err);
+    } catch {
       return null;
     }
   }
 
   /**
-   * Envía o actualiza votos del día por separado.
-   * Permite enviar sólo canción, sólo artista, sólo película o combinaciones.
+   * Encuentra qué otras personas han votado lo mismo que el usuario.
    */
+  async getMatchingVotes(
+    campusSlug: string,
+    facultyId: string,
+    userSubmission: DailySubmission
+  ): Promise<MatchingVote[]> {
+    const results: MatchingVote[] = [];
+    if (!userSubmission) return results;
+
+    let pool: DailySubmission[] = [];
+
+    if (this.isMockMode()) {
+      const all = this.initMockDataIfNeeded();
+      pool = all.filter(
+        (s) =>
+          s.campus_slug === campusSlug &&
+          s.faculty_id === facultyId &&
+          s.user_id !== userSubmission.user_id
+      );
+    } else {
+      const supabase = createClient();
+      if (supabase) {
+        const { data } = await supabase
+          .from('daily_submissions')
+          .select('*')
+          .eq('campus_slug', campusSlug)
+          .eq('faculty_id', facultyId)
+          .neq('user_id', userSubmission.user_id);
+        if (data) pool = data;
+      }
+    }
+
+    // Coincidencias en Canción
+    if (userSubmission.song) {
+      const target = userSubmission.song.trim().toLowerCase();
+      const matches = pool.filter((s) => s.song && s.song.trim().toLowerCase() === target);
+      if (matches.length > 0) {
+        results.push({
+          category: 'song',
+          itemTitle: userSubmission.song,
+          voterCount: matches.length,
+          voters: matches.map((m) => ({
+            userId: m.user_id,
+            displayName: m.username || m.user_email.split('@')[0],
+            avatarUrl: m.user_avatar_url,
+          })),
+        });
+      }
+    }
+
+    // Coincidencias en Artista
+    if (userSubmission.artist) {
+      const target = userSubmission.artist.trim().toLowerCase();
+      const matches = pool.filter((s) => s.artist && s.artist.trim().toLowerCase() === target);
+      if (matches.length > 0) {
+        results.push({
+          category: 'artist',
+          itemTitle: userSubmission.artist,
+          voterCount: matches.length,
+          voters: matches.map((m) => ({
+            userId: m.user_id,
+            displayName: m.username || m.user_email.split('@')[0],
+            avatarUrl: m.user_avatar_url,
+          })),
+        });
+      }
+    }
+
+    // Coincidencias en Película
+    if (userSubmission.movie) {
+      const target = userSubmission.movie.trim().toLowerCase();
+      const matches = pool.filter((s) => s.movie && s.movie.trim().toLowerCase() === target);
+      if (matches.length > 0) {
+        results.push({
+          category: 'movie',
+          itemTitle: userSubmission.movie,
+          voterCount: matches.length,
+          voters: matches.map((m) => ({
+            userId: m.user_id,
+            displayName: m.username || m.user_email.split('@')[0],
+            avatarUrl: m.user_avatar_url,
+          })),
+        });
+      }
+    }
+
+    return results;
+  }
+
   async submitDailyVote(
     input: DailyVoteInput,
     user: AuthUser
@@ -335,9 +394,18 @@ class RankingsService {
       throw new Error('Debes estar autenticado para registrar tu voto.');
     }
 
-    const hasSong = Boolean(input.song && input.song.trim());
-    const hasArtist = Boolean(input.artist && input.artist.trim());
-    const hasMovie = Boolean(input.movie && input.movie.trim());
+    // Seguridad: Sanitizar entradas contra buffer overflow y caracteres extraños
+    const cleanSong = input.song ? sanitizeInput(input.song, MAX_LENGTHS.TEXT_INPUT) : undefined;
+    const cleanArtist = input.artist ? sanitizeInput(input.artist, MAX_LENGTHS.TEXT_INPUT) : undefined;
+    const cleanMovie = input.movie ? sanitizeInput(input.movie, MAX_LENGTHS.TEXT_INPUT) : undefined;
+
+    const cleanSongImg = sanitizeImageUrl(input.songImageUrl);
+    const cleanArtistImg = sanitizeImageUrl(input.artistImageUrl);
+    const cleanMovieImg = sanitizeImageUrl(input.movieImageUrl);
+
+    const hasSong = Boolean(cleanSong && cleanSong.length > 0);
+    const hasArtist = Boolean(cleanArtist && cleanArtist.length > 0);
+    const hasMovie = Boolean(cleanMovie && cleanMovie.length > 0);
 
     if (!hasSong && !hasArtist && !hasMovie) {
       throw new Error('Selecciona al menos una categoría (canción, artista o película).');
@@ -357,17 +425,18 @@ class RankingsService {
       let record: DailySubmission;
 
       if (existingIndex >= 0) {
-        // Actualizar/combinar los campos que el usuario envió por separado
         const current = submissions[existingIndex];
         record = {
           ...current,
           faculty_id: input.facultyId || current.faculty_id,
-          song: hasSong ? input.song!.trim() : current.song,
-          song_image_url: hasSong ? input.songImageUrl : current.song_image_url,
-          artist: hasArtist ? input.artist!.trim() : current.artist,
-          artist_image_url: hasArtist ? input.artistImageUrl : current.artist_image_url,
-          movie: hasMovie ? input.movie!.trim() : current.movie,
-          movie_image_url: hasMovie ? input.movieImageUrl : current.movie_image_url,
+          username: user.username || current.username,
+          user_avatar_url: user.avatarUrl || current.user_avatar_url,
+          song: hasSong ? cleanSong : current.song,
+          song_image_url: hasSong ? cleanSongImg : current.song_image_url,
+          artist: hasArtist ? cleanArtist : current.artist,
+          artist_image_url: hasArtist ? cleanArtistImg : current.artist_image_url,
+          movie: hasMovie ? cleanMovie : current.movie,
+          movie_image_url: hasMovie ? cleanMovieImg : current.movie_image_url,
         };
         submissions[existingIndex] = record;
       } else {
@@ -377,12 +446,14 @@ class RankingsService {
           faculty_id: input.facultyId,
           user_id: user.id,
           user_email: user.email,
-          song: hasSong ? input.song!.trim() : undefined,
-          song_image_url: hasSong ? input.songImageUrl : undefined,
-          artist: hasArtist ? input.artist!.trim() : undefined,
-          artist_image_url: hasArtist ? input.artistImageUrl : undefined,
-          movie: hasMovie ? input.movie!.trim() : undefined,
-          movie_image_url: hasMovie ? input.movieImageUrl : undefined,
+          username: user.username,
+          user_avatar_url: user.avatarUrl,
+          song: hasSong ? cleanSong : undefined,
+          song_image_url: hasSong ? cleanSongImg : undefined,
+          artist: hasArtist ? cleanArtist : undefined,
+          artist_image_url: hasArtist ? cleanArtistImg : undefined,
+          movie: hasMovie ? cleanMovie : undefined,
+          movie_image_url: hasMovie ? cleanMovieImg : undefined,
           submission_date: today,
           created_at: new Date().toISOString(),
         };
@@ -397,30 +468,29 @@ class RankingsService {
     }
 
     const supabase = createClient();
-    if (!supabase) {
-      throw new Error('Supabase no está configurado.');
-    }
+    if (!supabase) throw new Error('Supabase no está configurado.');
 
-    // En Supabase, usamos upsert basado en (user_id, submission_date)
     const payload: any = {
       campus_slug: input.campusSlug,
       faculty_id: input.facultyId,
       user_id: user.id,
       user_email: user.email,
+      username: user.username,
+      user_avatar_url: user.avatarUrl,
       submission_date: today,
     };
 
     if (hasSong) {
-      payload.song = input.song!.trim();
-      payload.song_image_url = input.songImageUrl;
+      payload.song = cleanSong;
+      payload.song_image_url = cleanSongImg;
     }
     if (hasArtist) {
-      payload.artist = input.artist!.trim();
-      payload.artist_image_url = input.artistImageUrl;
+      payload.artist = cleanArtist;
+      payload.artist_image_url = cleanArtistImg;
     }
     if (hasMovie) {
-      payload.movie = input.movie!.trim();
-      payload.movie_image_url = input.movieImageUrl;
+      payload.movie = cleanMovie;
+      payload.movie_image_url = cleanMovieImg;
     }
 
     const { data, error } = await supabase

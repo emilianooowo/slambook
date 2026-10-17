@@ -7,67 +7,80 @@ import {
   UNACH_ROAD_LABELS,
   UNACH_ROAD_PATHS,
 } from './unach-map-data';
+import {
+  getAllUniversities,
+  getCampusesByUniversity,
+} from '@/config/campuses';
+import { CampusConfig } from '@/types/slambook.types';
 
 interface CampusMapProps {
   selectedFacultyId: string | null;
   onSelectFaculty: (facultyId: string) => void;
-  campusSlug?: string;
+  currentCampus: CampusConfig;
+  onCampusChange: (newSlug: string) => void;
   className?: string;
 }
 
 export default function CampusMap({
   selectedFacultyId,
   onSelectFaculty,
+  currentCampus,
+  onCampusChange,
   className = '',
 }: CampusMapProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const hoveredFaculty = UNACH_FACULTIES_DATA.find((f) => f.id === hoveredId);
 
+  const universities = getAllUniversities();
+  const campusesForCurrentUni = getCampusesByUniversity(currentCampus.universityId);
+
+  const handleUniversitySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const uniId = e.target.value;
+    const campuses = getCampusesByUniversity(uniId);
+    if (campuses.length > 0) {
+      onCampusChange(campuses[0].slug);
+    }
+  };
+
+  const handleCampusSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onCampusChange(e.target.value);
+  };
+
   return (
     <div
-      className={`relative w-full h-full flex flex-col bg-[#0b101d]/90 backdrop-blur-2xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl select-none ${className}`}
+      className={`relative w-full h-full flex flex-col bg-white border border-neutral-200 rounded-xl overflow-hidden select-none ${className}`}
     >
-      {/* Barra de título del mapa estilo macOS */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-black/30 backdrop-blur text-xs font-sans text-slate-300">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-          </div>
-          <span className="text-slate-400 font-medium">Plano Interactivo Campus I</span>
-          <span className="text-slate-600">/</span>
-          <span className="text-white font-semibold">
-            {selectedFacultyId ? selectedFacultyId.toUpperCase() : 'Ninguna'}
+      {/* Barra superior de estado sin bordes ni fondos en labels */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100 bg-white text-xs text-neutral-600">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-neutral-900">{currentCampus.shortName}</span>
+          <span className="text-neutral-300">/</span>
+          <span className="text-neutral-500">
+            {selectedFacultyId ? selectedFacultyId.toUpperCase() : 'Ninguna seleccionada'}
           </span>
         </div>
-
-        <div className="text-xs">
-          {hoveredFaculty ? (
-            <span className="text-blue-400 font-medium">{hoveredFaculty.name}</span>
-          ) : (
-            <span className="text-slate-500">Toca una facultad para explorar</span>
-          )}
+        <div className="text-xs text-neutral-400">
+          {hoveredFaculty ? hoveredFaculty.name : 'Haz clic en una facultad'}
         </div>
       </div>
 
-      {/* SVG del Mapa con Paleta Dark Blue de Apple */}
-      <div className="relative flex-1 w-full h-full p-4 flex items-center justify-center overflow-hidden bg-[#070b14]">
+      {/* SVG del Mapa en estilo claro minimalista */}
+      <div className="relative flex-1 w-full h-full p-4 flex items-center justify-center overflow-hidden bg-[#fafafa]">
         <svg
           viewBox={`0 0 ${MAP_VIEWBOX.width} ${MAP_VIEWBOX.height}`}
           className="w-full h-full max-h-full object-contain"
           preserveAspectRatio="xMidYMid meet"
           role="region"
-          aria-label="Plano de facultades Campus UNACH"
+          aria-label="Plano de facultades"
         >
-          {/* Trazos viales */}
+          {/* Calles */}
           <g id="roads" className="pointer-events-none">
             {UNACH_ROAD_PATHS.map((road) => (
               <path
                 key={road.id}
                 d={road.d}
-                stroke={road.kind === 'major' ? '#1e293b' : '#0f172a'}
+                stroke={road.kind === 'major' ? '#e2e8f0' : '#edf2f7'}
                 strokeWidth={road.strokeWidth}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -80,11 +93,11 @@ export default function CampusMap({
                 x={label.x}
                 y={label.y}
                 transform={`rotate(${label.rotation} ${label.x} ${label.y})`}
-                fill="#475569"
+                fill="#94a3b8"
                 fontSize="11"
-                fontFamily="-apple-system, system-ui, sans-serif"
+                fontFamily="system-ui, sans-serif"
                 fontWeight="500"
-                letterSpacing="0.08em"
+                letterSpacing="0.06em"
                 textAnchor="middle"
               >
                 {label.text}
@@ -98,17 +111,17 @@ export default function CampusMap({
               const isSelected = selectedFacultyId === faculty.id;
               const isHovered = hoveredId === faculty.id;
 
-              let fill = '#111827';
-              let stroke = '#374151';
+              let fill = '#ffffff';
+              let stroke = '#cbd5e1';
               let strokeWidth = 1.5;
 
               if (isSelected) {
-                fill = '#0071e3'; // Azul Apple oficial
-                stroke = '#ffffff';
-                strokeWidth = 3;
+                fill = '#8A4222'; // Acento cobrizo casi oscuro
+                stroke = '#6b3319';
+                strokeWidth = 2.5;
               } else if (isHovered) {
-                fill = '#1f293d';
-                stroke = '#60a5fa';
+                fill = '#f8fafc';
+                stroke = '#8A4222';
                 strokeWidth = 2;
               }
 
@@ -136,7 +149,7 @@ export default function CampusMap({
                   stroke={stroke}
                   strokeWidth={strokeWidth}
                   strokeLinejoin="round"
-                  className="cursor-pointer transition-all duration-200 outline-none"
+                  className="cursor-pointer transition-colors duration-150 outline-none"
                 />
               );
             })}
@@ -153,11 +166,10 @@ export default function CampusMap({
                   y={faculty.labelCoords.y}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  fontFamily="-apple-system, system-ui, sans-serif"
+                  fontFamily="system-ui, sans-serif"
                   fontSize="13"
-                  fontWeight="700"
-                  letterSpacing="0.02em"
-                  fill={isSelected ? '#ffffff' : '#cbd5e1'}
+                  fontWeight="600"
+                  fill={isSelected ? '#ffffff' : '#334155'}
                 >
                   {faculty.shortName}
                 </text>
@@ -165,12 +177,46 @@ export default function CampusMap({
             })}
           </g>
         </svg>
-
-        {/* Badge inferior estilo pill de Apple */}
-        <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full text-xs text-slate-300 font-sans shadow-lg">
-          Campus I · Tuxtla Gutiérrez
-        </div>
       </div>
+
+      {/* Selectores de Universidad y Campus en la parte inferior */}
+      <footer className="px-4 py-3 border-t border-neutral-100 bg-white flex flex-wrap items-center gap-4 text-xs">
+        <div className="flex items-center gap-2">
+          {/* Label sin fondo ni bordeado */}
+          <span className="text-neutral-500 font-medium whitespace-nowrap">
+            Universidad:
+          </span>
+          <select
+            value={currentCampus.universityId}
+            onChange={handleUniversitySelect}
+            className="px-2.5 py-1.5 bg-white border border-neutral-200 rounded-md text-neutral-800 text-xs focus:outline-none focus:border-[#8A4222]"
+          >
+            {universities.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Label sin fondo ni bordeado */}
+          <span className="text-neutral-500 font-medium whitespace-nowrap">
+            Campus:
+          </span>
+          <select
+            value={currentCampus.slug}
+            onChange={handleCampusSelect}
+            className="px-2.5 py-1.5 bg-white border border-neutral-200 rounded-md text-neutral-800 text-xs focus:outline-none focus:border-[#8A4222]"
+          >
+            {campusesForCurrentUni.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.campusName}
+              </option>
+            ))}
+          </select>
+        </div>
+      </footer>
     </div>
   );
 }

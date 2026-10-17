@@ -2,7 +2,10 @@ import { CampusConfig } from '@/types/slambook.types';
 
 export const unachTuxtlaConfig: CampusConfig = {
   slug: 'unach-tuxtla',
-  name: 'Universidad Autónoma de Chiapas - Campus I',
+  universityId: 'unach',
+  universityName: 'Universidad Autónoma de Chiapas',
+  campusName: 'Campus I · Tuxtla Gutiérrez',
+  name: 'UNACH · Campus I Tuxtla',
   shortName: 'UNACH Tuxtla',
   allowedDomain: 'unach.mx',
   defaultFacultyId: 'ingenieria',

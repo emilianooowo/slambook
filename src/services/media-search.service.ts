@@ -1,10 +1,11 @@
 import { MediaItem, MediaType } from '@/types/slambook.types';
+import { sanitizeSearchQuery } from '@/lib/security';
 
 class MediaSearchService {
   private cache = new Map<string, MediaItem[]>();
 
   async search(query: string, type: MediaType, signal?: AbortSignal): Promise<MediaItem[]> {
-    const trimmed = query.trim();
+    const trimmed = sanitizeSearchQuery(query);
     if (!trimmed || trimmed.length < 2) {
       return [];
     }
