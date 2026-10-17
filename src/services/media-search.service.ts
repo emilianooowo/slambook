@@ -16,126 +16,28 @@ class MediaSearchService {
     }
 
     try {
-      let results: MediaItem[] = [];
+      // Usar endpoint interno del servidor Next.js para evitar bloqueos de CORS en el browser
+      const url = `/api/media-search?term=${encodeURIComponent(trimmed)}&type=${type}`;
+      const res = await fetch(url, { signal });
 
-      if (type === 'movie') {
-        results = await this.searchMovies(trimmed, signal);
-      } else if (type === 'artist') {
-        results = await this.searchArtists(trimmed, signal);
-      } else {
-        results = await this.searchSongs(trimmed, signal);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          this.cache.set(cacheKey, data.results);
+          return data.results;
+        }
       }
 
-      if (results.length === 0) {
-        results = this.getFallbackResults(trimmed, type);
-      }
-
-      this.cache.set(cacheKey, results);
-      return results;
+      // Si la API interna no arroja resultados, recurrir a los datos predefinidos
+      const fallback = this.getFallbackResults(trimmed, type);
+      this.cache.set(cacheKey, fallback);
+      return fallback;
     } catch (err: any) {
       if (err.name === 'AbortError') {
         return [];
       }
-      console.warn('MediaSearch error, using fallback:', err);
       return this.getFallbackResults(trimmed, type);
     }
-  }
-
-  private async searchSongs(query: string, signal?: AbortSignal): Promise<MediaItem[]> {
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(
-      query
-    )}&media=music&entity=song&limit=10&country=MX`;
-
-    const res = await fetch(url, { signal });
-    if (!res.ok) throw new Error(`Songs fetch status ${res.status}`);
-    const data = await res.json();
-
-    return (data.results || []).map((item: any) => {
-      const hdImage = item.artworkUrl100
-        ? item.artworkUrl100.replace('100x100bb', '600x600bb')
-        : undefined;
-
-      return {
-        id: String(item.trackId || item.collectionId || Math.random()),
-        title: item.trackName || 'Sin título',
-        subtitle: item.artistName || 'Artista desconocido',
-        type: 'song' as MediaType,
-        imageUrl: hdImage,
-      };
-    });
-  }
-
-  private async searchArtists(query: string, signal?: AbortSignal): Promise<MediaItem[]> {
-    // Para artistas, buscar albums en iTunes permite obtener el arte/fotografía oficial del artista
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(
-      query
-    )}&media=music&entity=album&limit=15&country=MX`;
-
-    const res = await fetch(url, { signal });
-    if (!res.ok) throw new Error(`Artists fetch status ${res.status}`);
-    const data = await res.json();
-
-    const seenArtists = new Set<string>();
-    const results: MediaItem[] = [];
-
-    for (const item of data.results || []) {
-      const artistName = (item.artistName || '').trim();
-      const lower = artistName.toLowerCase();
-      if (!artistName || seenArtists.has(lower)) continue;
-
-      seenArtists.add(lower);
-      const hdImage = item.artworkUrl100
-        ? item.artworkUrl100.replace('100x100bb', '600x600bb')
-        : undefined;
-
-      results.push({
-        id: String(item.artistId || item.collectionId || Math.random()),
-        title: artistName,
-        subtitle: item.primaryGenreName || 'Música',
-        type: 'artist' as MediaType,
-        imageUrl: hdImage,
-      });
-
-      if (results.length >= 8) break;
-    }
-
-    return results;
-  }
-
-  private async searchMovies(query: string, signal?: AbortSignal): Promise<MediaItem[]> {
-    // Intento 1: Catálogo regional México
-    let url = `https://itunes.apple.com/search?term=${encodeURIComponent(
-      query
-    )}&media=movie&entity=movie&limit=10&country=MX`;
-
-    let res = await fetch(url, { signal });
-    let data = res.ok ? await res.json() : { results: [] };
-
-    // Intento 2: Si no hay resultados, catálogo global US
-    if (!data.results || data.results.length === 0) {
-      url = `https://itunes.apple.com/search?term=${encodeURIComponent(
-        query
-      )}&media=movie&entity=movie&limit=10&country=US`;
-      res = await fetch(url, { signal });
-      if (res.ok) {
-        data = await res.json();
-      }
-    }
-
-    return (data.results || []).map((item: any) => {
-      const year = item.releaseDate ? item.releaseDate.substring(0, 4) : '';
-      const hdImage = item.artworkUrl100
-        ? item.artworkUrl100.replace('100x100bb', '600x600bb')
-        : undefined;
-
-      return {
-        id: String(item.trackId || Math.random()),
-        title: item.trackName || 'Sin título',
-        subtitle: year ? `${year} · Película` : 'Película',
-        type: 'movie' as MediaType,
-        imageUrl: hdImage,
-      };
-    });
   }
 
   private getFallbackResults(query: string, type: MediaType): MediaItem[] {
@@ -145,86 +47,81 @@ class MediaSearchService {
         {
           title: 'Starboy',
           subtitle: 'The Weeknd ft. Daft Punk',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bf/19/27/bf19273c-cbe4-8f49-556b-67a845a7ad86/16UMGIM86064.rgb.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop',
         },
         {
           title: 'De Música Ligera',
           subtitle: 'Soda Stereo',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/44/21/df/4421df65-e9f0-252c-c466-9c4c798031d6/886445582379.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop',
         },
         {
           title: 'Bohemian Rhapsody',
           subtitle: 'Queen',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/3d/8c/59/3d8c593d-d421-4fa3-5e92-6a7f1a30f3a6/00602547202773.rgb.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop',
         },
         {
           title: 'Ojitos Lindos',
           subtitle: 'Bad Bunny & Bomba Estéreo',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/3e/70/4e/3e704e90-c24c-9f6b-735a-8b8a68b57112/196626945068.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop',
         },
         {
           title: 'La Incondicional',
           subtitle: 'Luis Miguel',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/cb/20/33/cb2033bc-1f55-6b66-e886-4f7f6a735c02/090317379569.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&h=300&fit=crop',
         },
       ],
       artist: [
         {
           title: 'The Weeknd',
           subtitle: 'R&B / Pop',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bf/19/27/bf19273c-cbe4-8f49-556b-67a845a7ad86/16UMGIM86064.rgb.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=300&h=300&fit=crop&crop=faces',
         },
         {
           title: 'Bad Bunny',
           subtitle: 'Urbano latino',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/3e/70/4e/3e704e90-c24c-9f6b-735a-8b8a68b57112/196626945068.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&h=300&fit=crop&crop=faces',
         },
         {
           title: 'Daft Punk',
           subtitle: 'Electrónica',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/98/9c/64989c72-c07a-24ce-55c3-11dc82ffcf19/886443927080.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&h=300&fit=crop',
         },
         {
           title: 'Taylor Swift',
           subtitle: 'Pop',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/09/b3/ef/09b3ef50-ec25-ee86-077d-78ebc6e24694/22UMGIM97187.rgb.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=faces',
         },
         {
-          title: 'Luis Miguel',
-          subtitle: 'Balada / Pop',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/cb/20/33/cb2033bc-1f55-6b66-e886-4f7f6a735c02/090317379569.jpg/600x600bb.jpg',
+          title: 'Soda Stereo',
+          subtitle: 'Rock en español',
+          imageUrl: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=300&h=300&fit=crop',
         },
       ],
       movie: [
         {
           title: 'Interstellar',
           subtitle: '2014 · Ciencia ficción',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Video115/v4/ee/11/fb/ee11fb14-5f50-fa0c-5264-a690e0b3c20c/pr_source.lsr/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=450&fit=crop',
         },
         {
           title: 'Oppenheimer',
           subtitle: '2023 · Drama / Historia',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Video126/v4/55/b2/89/55b28956-613b-28f0-1c00-60b6ae208be7/Universal_Oppenheimer_AppleTV_EST_KeyArt_4000x3000.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=300&h=450&fit=crop',
         },
         {
           title: 'Spider-Man: Into the Spider-Verse',
           subtitle: '2018 · Animación',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Video123/v4/f2/a7/60/f2a7604a-dc6d-3135-e150-f131a4773820/pr_source.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=300&h=450&fit=crop',
         },
         {
           title: 'Blade Runner 2049',
           subtitle: '2017 · Ciencia ficción',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Video118/v4/3d/c1/34/3dc134dc-7b1f-e3c3-333e-4869c9ff4c2b/pr_source.lsr/600x600bb.jpg',
-        },
-        {
-          title: 'El Viaje de Chihiro',
-          subtitle: '2001 · Animación / Fantasía',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Video124/v4/05/65/59/056559d2-7c39-38b8-07e1-b4f0b240578d/SpiritedAway_KeyArt_iTunes_2000x3000.jpg/600x600bb.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&h=450&fit=crop',
         },
         {
           title: 'Parasite',
-          subtitle: '2019 · Suspense / Drama',
-          imageUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Video123/v4/36/53/7d/36537dbf-5db7-0136-1262-1cf7bbd22223/pr_source.jpg/600x600bb.jpg',
+          subtitle: '2019 · Drama / Suspense',
+          imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=300&h=450&fit=crop',
         },
       ],
     };

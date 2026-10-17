@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Music, Mic2, Film, Users, Trophy } from 'lucide-react';
 import {
   CampusConfig,
   FacultyRankings,
@@ -11,6 +12,7 @@ import {
 } from '@/types/slambook.types';
 import { rankingsService } from '@/services/rankings.service';
 import { authService } from '@/services/auth.service';
+import MediaImage from '@/components/common/MediaImage';
 
 interface FacultyPanelProps {
   campus: CampusConfig;
@@ -123,16 +125,20 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
         {currentUser && (
           <section className="p-3.5 bg-neutral-50 border border-neutral-100 rounded-lg space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-neutral-800">
+              <span className="font-semibold text-neutral-800 flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5 text-[#8A4222]" />
                 Tu voto de hoy
               </span>
               {userSubmission && matchingVotes.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setShowMatches(!showMatches)}
-                  className="text-xs text-[#8A4222] hover:underline font-medium"
+                  className="text-xs text-[#8A4222] hover:underline font-medium flex items-center gap-1"
                 >
-                  {showMatches ? 'Ocultar coincidencias' : `Ver quién votó lo mismo (${matchingVotes.reduce((acc, m) => acc + m.voterCount, 0)})`}
+                  <Users className="w-3 h-3" />
+                  {showMatches
+                    ? 'Ocultar'
+                    : `Coincidencias (${matchingVotes.reduce((acc, m) => acc + m.voterCount, 0)})`}
                 </button>
               )}
             </div>
@@ -141,6 +147,7 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
               <div className="space-y-1.5 text-neutral-600">
                 {userSubmission.song && (
                   <div className="flex items-center gap-2">
+                    <Music className="w-3 h-3 text-neutral-400" />
                     <span className="text-neutral-400">Canción:</span>
                     <span className="font-medium text-neutral-900 truncate">
                       {userSubmission.song}
@@ -149,6 +156,7 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
                 )}
                 {userSubmission.artist && (
                   <div className="flex items-center gap-2">
+                    <Mic2 className="w-3 h-3 text-neutral-400" />
                     <span className="text-neutral-400">Artista:</span>
                     <span className="font-medium text-neutral-900 truncate">
                       {userSubmission.artist}
@@ -157,6 +165,7 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
                 )}
                 {userSubmission.movie && (
                   <div className="flex items-center gap-2">
+                    <Film className="w-3 h-3 text-neutral-400" />
                     <span className="text-neutral-400">Película:</span>
                     <span className="font-medium text-neutral-900 truncate">
                       {userSubmission.movie}
@@ -164,7 +173,6 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
                   </div>
                 )}
 
-                {/* Detalle de coincidencias con otros estudiantes */}
                 {showMatches && matchingVotes.length > 0 && (
                   <div className="mt-3 pt-2.5 border-t border-neutral-200/60 space-y-2">
                     <span className="text-xs font-medium text-[#8A4222] block">
@@ -217,7 +225,8 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
           <>
             {/* TOP CANCIONES */}
             <section className="space-y-2.5">
-              <span className="font-semibold text-neutral-700 block">
+              <span className="font-semibold text-neutral-700 flex items-center gap-1.5">
+                <Music className="w-3.5 h-3.5 text-neutral-500" />
                 Top Canciones
               </span>
               {rankings.songs.length === 0 ? (
@@ -232,17 +241,12 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
                       <span className="w-4 text-center font-semibold text-neutral-400">
                         {idx + 1}
                       </span>
-                      {song.imageUrl ? (
-                        <img
-                          src={song.imageUrl}
-                          alt={song.name}
-                          className="w-8 h-8 rounded object-cover border border-neutral-100 flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded bg-neutral-100 flex items-center justify-center text-neutral-400 font-medium flex-shrink-0">
-                          ♪
-                        </div>
-                      )}
+                      <MediaImage
+                        src={song.imageUrl}
+                        alt={song.name}
+                        type="song"
+                        className="w-9 h-9 rounded object-cover border border-neutral-100 flex-shrink-0"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-neutral-900 truncate">
                           {song.name}
@@ -259,7 +263,8 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
 
             {/* TOP ARTISTAS */}
             <section className="space-y-2.5">
-              <span className="font-semibold text-neutral-700 block">
+              <span className="font-semibold text-neutral-700 flex items-center gap-1.5">
+                <Mic2 className="w-3.5 h-3.5 text-neutral-500" />
                 Top Artistas
               </span>
               {rankings.artists.length === 0 ? (
@@ -274,17 +279,12 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
                       <span className="w-4 text-center font-semibold text-neutral-400">
                         {idx + 1}
                       </span>
-                      {artist.imageUrl ? (
-                        <img
-                          src={artist.imageUrl}
-                          alt={artist.name}
-                          className="w-8 h-8 rounded-full object-cover border border-neutral-100 flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 font-medium flex-shrink-0">
-                          ★
-                        </div>
-                      )}
+                      <MediaImage
+                        src={artist.imageUrl}
+                        alt={artist.name}
+                        type="artist"
+                        className="w-9 h-9 rounded-full object-cover border border-neutral-100 flex-shrink-0"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-neutral-900 truncate">
                           {artist.name}
@@ -301,7 +301,8 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
 
             {/* TOP PELÍCULAS */}
             <section className="space-y-2.5">
-              <span className="font-semibold text-neutral-700 block">
+              <span className="font-semibold text-neutral-700 flex items-center gap-1.5">
+                <Film className="w-3.5 h-3.5 text-neutral-500" />
                 Top Películas
               </span>
               {rankings.movies.length === 0 ? (
@@ -316,17 +317,12 @@ export default function FacultyPanel({ campus, facultyId }: FacultyPanelProps) {
                       <span className="w-4 text-center font-semibold text-neutral-400">
                         {idx + 1}
                       </span>
-                      {movie.imageUrl ? (
-                        <img
-                          src={movie.imageUrl}
-                          alt={movie.name}
-                          className="w-7 h-9 rounded object-cover border border-neutral-100 flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-7 h-9 rounded bg-neutral-100 flex items-center justify-center text-neutral-400 font-medium flex-shrink-0">
-                          🎬
-                        </div>
-                      )}
+                      <MediaImage
+                        src={movie.imageUrl}
+                        alt={movie.name}
+                        type="movie"
+                        className="w-8 h-10 rounded object-cover border border-neutral-100 flex-shrink-0"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-neutral-900 truncate">
                           {movie.name}

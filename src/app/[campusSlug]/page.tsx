@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound, useParams, useRouter } from 'next/navigation';
+import { Plus, Search, User } from 'lucide-react';
 import { getCampusBySlug } from '@/config/campuses';
 import CampusMap from '@/components/map/CampusMap';
 import FacultyPanel from '@/components/rankings/FacultyPanel';
@@ -44,7 +45,7 @@ export default function CampusPage() {
 
   return (
     <main className="h-screen w-screen overflow-hidden flex flex-col bg-[#f9f9f9] text-neutral-900 font-sans">
-      {/* Header minimalista blanco #ffffff */}
+      {/* Header minimalista blanco */}
       <header className="h-14 px-6 border-b border-neutral-200 bg-white flex items-center justify-between select-none flex-shrink-0 z-20">
         <div className="flex items-center gap-4">
           <span className="text-base font-semibold tracking-tight text-neutral-900">
@@ -56,20 +57,31 @@ export default function CampusPage() {
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Botón para buscar en rankings históricos */}
+          <Link
+            href="/rankings"
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 rounded-lg text-xs font-medium transition-colors"
+            title="Buscar posición de tus favoritos en el ranking"
+          >
+            <Search className="w-3.5 h-3.5 text-[#8A4222]" />
+            <span className="hidden sm:inline">Buscar en rankings</span>
+          </Link>
+
           {/* Botón de voto en el Header con acento cobrizo casi oscuro */}
           <button
             type="button"
             onClick={() => setIsVoteModalOpen(true)}
-            className="px-3.5 py-1.5 bg-[#8A4222] hover:bg-[#72361b] text-white rounded-lg text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#8A4222] hover:bg-[#72361b] text-white rounded-lg text-xs font-medium transition-colors"
           >
-            + Votar hoy
+            <Plus className="w-3.5 h-3.5" />
+            <span>Votar hoy</span>
           </button>
 
           {/* Ícono de perfil que redirige a /profile */}
           <Link
             href="/profile"
-            className="w-8 h-8 rounded-full border border-neutral-200 bg-neutral-100 flex items-center justify-center text-neutral-600 hover:border-[#8A4222] hover:text-[#8A4222] transition-colors overflow-hidden"
+            className="w-8 h-8 rounded-full border border-neutral-200 bg-neutral-50 flex items-center justify-center text-neutral-600 hover:border-[#8A4222] hover:text-[#8A4222] transition-colors overflow-hidden"
             title="Ver perfil de usuario"
           >
             {currentUser?.avatarUrl ? (
@@ -79,19 +91,7 @@ export default function CampusPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.8"
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
+              <User className="w-4 h-4 text-neutral-500" />
             )}
           </Link>
         </div>

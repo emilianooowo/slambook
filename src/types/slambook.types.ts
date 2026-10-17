@@ -105,3 +105,19 @@ export interface MatchingVote {
     avatarUrl?: string;
   }>;
 }
+
+export interface FacultyBreakdown {
+  facultyId: string;
+  facultyName: string;
+  rank: number;
+  votes: number;
+}
+
+export interface EntityRankingDetail {
+  title: string;
+  type: MediaType;
+  imageUrl?: string;
+  campusRank: number;
+  totalCampusVotes: number;
+  facultyBreakdowns: FacultyBreakdown[];
+}
