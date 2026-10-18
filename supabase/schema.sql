@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   -- Restricciones de longitud para seguridad contra desbordamientos
   CONSTRAINT profiles_username_length_check CHECK (char_length(username) >= 3 AND char_length(username) <= 40),
   CONSTRAINT profiles_email_length_check CHECK (char_length(email) <= 120),
-  CONSTRAINT profiles_avatar_length_check CHECK (avatar_url IS NULL OR char_length(avatar_url) <= 500)
+  CONSTRAINT profiles_avatar_length_check CHECK (avatar_url IS NULL OR char_length(avatar_url) <= 500000)
 );
 
 -- 2. Tabla de Envíos Diarios

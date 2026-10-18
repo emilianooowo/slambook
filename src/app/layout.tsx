@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ToastProvider } from '@/components/common/Toast';
 
 export const metadata: Metadata = {
   title: 'Slambook · Rankings Universitarios',
@@ -13,8 +14,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="h-screen w-screen overflow-hidden bg-white text-neutral-900 m-0 p-0 antialiased">
-        {children}
+      <body className="h-screen w-screen overflow-hidden bg-[#f9f9f9] text-neutral-900 m-0 p-0 antialiased selection:bg-[#8A4222]/15 selection:text-[#8A4222]">
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

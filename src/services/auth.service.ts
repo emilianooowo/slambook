@@ -1,6 +1,7 @@
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { AuthUser, UserProfile } from '@/types/slambook.types';
 import { sanitizeInput, sanitizeImageUrl, isValidUsername, MAX_LENGTHS } from '@/lib/security';
+import { rankingsService } from '@/services/rankings.service';
 
 const MOCK_STORAGE_KEY = 'slambook_mock_user_v2';
 const MOCK_PROFILES_KEY = 'slambook_mock_profiles_v2';
@@ -240,6 +241,39 @@ class AuthService {
 
     const supabase = createClient();
     if (supabase) {
+      await supabase.auth.signOut();
+    }
+    this.notify(null);
+  }
+
+  async deleteAccount(userId: string): Promise<void> {
+    if (!userId) return;
+
+    // 1. Eliminar votos asociados al usuario
+    await rankingsService.deleteUserData(userId);
+
+    // 2. Eliminar perfil y sesión en modo Mock o Supabase
+    if (this.isMockMode()) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(MOCK_STORAGE_KEY);
+        try {
+          const stored = localStorage.getItem(MOCK_PROFILES_KEY);
+          if (stored) {
+            const profiles = JSON.parse(stored);
+            delete profiles[userId];
+            localStorage.setItem(MOCK_PROFILES_KEY, JSON.stringify(profiles));
+          }
+        } catch {
+          // Reset
+        }
+      }
+      this.notify(null);
+      return;
+    }
+
+    const supabase = createClient();
+    if (supabase) {
+      await supabase.from('profiles').delete().eq('id', userId);
       await supabase.auth.signOut();
     }
     this.notify(null);

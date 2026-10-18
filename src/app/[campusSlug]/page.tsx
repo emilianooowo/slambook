@@ -1,15 +1,44 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { notFound, useParams, useRouter } from 'next/navigation';
-import { Plus, Search, User } from 'lucide-react';
+import { notFound, useParams, useRouter, useSearchParams } from 'next/navigation';
+import { Plus, Search, User, LogIn } from 'lucide-react';
 import { getCampusBySlug } from '@/config/campuses';
 import CampusMap from '@/components/map/CampusMap';
 import FacultyPanel from '@/components/rankings/FacultyPanel';
 import VoteModal from '@/components/form/VoteModal';
 import { authService } from '@/services/auth.service';
 import { AuthUser } from '@/types/slambook.types';
+import { useToast } from '@/components/common/Toast';
+
+function AuthFeedbackWatcher({ allowedDomain }: { allowedDomain: string }) {
+  const searchParams = useSearchParams();
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    const authError = searchParams.get('auth_error');
+    const authSuccess = searchParams.get('auth_success');
+    const rejectedEmail = searchParams.get('rejected_email');
+
+    if (authError) {
+      if (authError === 'domain_not_allowed') {
+        showToast(
+          `Solo se permite acceso con correos institucionales (@${allowedDomain})${
+            rejectedEmail ? ` — ${rejectedEmail}` : ''
+          }`,
+          'error'
+        );
+      } else {
+        showToast(`Error de autenticación: ${authError}`, 'error');
+      }
+    } else if (authSuccess) {
+      showToast('¡Bienvenido a Slambook! Sesión iniciada con éxito', 'success');
+    }
+  }, [searchParams, allowedDomain, showToast]);
+
+  return null;
+}
 
 export default function CampusPage() {
   const params = useParams();
@@ -45,6 +74,10 @@ export default function CampusPage() {
 
   return (
     <main className="h-screen w-screen overflow-hidden flex flex-col bg-[#f9f9f9] text-neutral-900 font-sans">
+      <Suspense fallback={null}>
+        <AuthFeedbackWatcher allowedDomain={campus.allowedDomain} />
+      </Suspense>
+
       {/* Header minimalista blanco */}
       <header className="h-14 px-6 border-b border-neutral-200 bg-white flex items-center justify-between select-none flex-shrink-0 z-20">
         <div className="flex items-center gap-4">
@@ -61,39 +94,52 @@ export default function CampusPage() {
           {/* Botón para buscar en rankings históricos */}
           <Link
             href="/rankings"
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 rounded-lg text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 rounded-xl text-xs font-medium transition-colors"
             title="Buscar posición de tus favoritos en el ranking"
           >
             <Search className="w-3.5 h-3.5 text-[#8A4222]" />
             <span className="hidden sm:inline">Buscar en rankings</span>
           </Link>
 
-          {/* Botón de voto en el Header con acento cobrizo casi oscuro */}
+          {/* Botón de voto en el Header con acento cobrizo oscuro */}
           <button
             type="button"
             onClick={() => setIsVoteModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#8A4222] hover:bg-[#72361b] text-white rounded-lg text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#8A4222] hover:bg-[#72361b] text-white rounded-xl text-xs font-medium transition-colors shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Votar hoy</span>
           </button>
 
-          {/* Ícono de perfil que redirige a /profile */}
-          <Link
-            href="/profile"
-            className="w-8 h-8 rounded-full border border-neutral-200 bg-neutral-50 flex items-center justify-center text-neutral-600 hover:border-[#8A4222] hover:text-[#8A4222] transition-colors overflow-hidden"
-            title="Ver perfil de usuario"
-          >
-            {currentUser?.avatarUrl ? (
-              <img
-                src={currentUser.avatarUrl}
-                alt="Perfil"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <User className="w-4 h-4 text-neutral-500" />
-            )}
-          </Link>
+          {/* Acceso o Perfil de usuario */}
+          {currentUser ? (
+            <Link
+              href="/profile"
+              className="w-8 h-8 rounded-full border border-neutral-200 bg-neutral-50 flex items-center justify-center text-neutral-600 hover:border-[#8A4222] transition-colors overflow-hidden flex-shrink-0 shadow-sm"
+              title={`Perfil: ${currentUser.username || currentUser.email}`}
+            >
+              {currentUser.avatarUrl ? (
+                <img
+                  src={currentUser.avatarUrl}
+                  alt="Perfil"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-[11px] font-bold text-neutral-700">
+                  {(currentUser.username || currentUser.email)[0]?.toUpperCase()}
+                </span>
+              )}
+            </Link>
+          ) : (
+            <Link
+              href="/profile"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-600 hover:text-neutral-900 border border-neutral-200 hover:bg-neutral-50 rounded-xl font-medium transition-colors"
+              title="Acceder con cuenta institucional"
+            >
+              <LogIn className="w-3.5 h-3.5 text-neutral-500" />
+              <span className="hidden sm:inline">Acceder</span>
+            </Link>
+          )}
         </div>
       </header>
 

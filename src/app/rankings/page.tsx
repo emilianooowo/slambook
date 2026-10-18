@@ -216,14 +216,14 @@ export default function RankingsSearchPage() {
                         {item.facultyBreakdowns.map((fb) => (
                           <div
                             key={fb.facultyId}
-                            className="flex items-center justify-between text-xs text-neutral-700 bg-neutral-50 px-2.5 py-1 rounded"
+                            className="flex items-center justify-between text-xs text-neutral-700 py-1 border-b border-neutral-100/60 last:border-b-0"
                           >
-                            <span className="truncate flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-neutral-400" />
+                            <span className="truncate flex items-center gap-1.5">
+                              <MapPin className="w-3 h-3 text-[#8A4222]" />
                               {fb.facultyName}
                             </span>
                             <span className="font-semibold text-neutral-900 whitespace-nowrap ml-2">
-                              #{fb.rank} ({fb.votes} votos)
+                              #{fb.rank} ({fb.votes} {fb.votes === 1 ? 'voto' : 'votos'})
                             </span>
                           </div>
                         ))}
@@ -250,6 +250,8 @@ export default function RankingsSearchPage() {
                 </div>
                 {loadingLeaderboard ? (
                   <p className="text-xs text-neutral-400">Cargando...</p>
+                ) : topSongs.length === 0 ? (
+                  <p className="text-[11px] text-neutral-400 italic py-2">Sin votos registrados aún</p>
                 ) : (
                   <div className="space-y-2">
                     {topSongs.map((song, idx) => (
@@ -283,6 +285,8 @@ export default function RankingsSearchPage() {
                 </div>
                 {loadingLeaderboard ? (
                   <p className="text-xs text-neutral-400">Cargando...</p>
+                ) : topArtists.length === 0 ? (
+                  <p className="text-[11px] text-neutral-400 italic py-2">Sin votos registrados aún</p>
                 ) : (
                   <div className="space-y-2">
                     {topArtists.map((artist, idx) => (
@@ -316,6 +320,8 @@ export default function RankingsSearchPage() {
                 </div>
                 {loadingLeaderboard ? (
                   <p className="text-xs text-neutral-400">Cargando...</p>
+                ) : topMovies.length === 0 ? (
+                  <p className="text-[11px] text-neutral-400 italic py-2">Sin votos registrados aún</p>
                 ) : (
                   <div className="space-y-2">
                     {topMovies.map((movie, idx) => (

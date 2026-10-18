@@ -10,6 +10,7 @@ export const MAX_LENGTHS = {
   USERNAME: 40,
   EMAIL: 120,
   URL: 500,
+  AVATAR_DATA_URI: 500000,
 } as const;
 
 /**
@@ -69,12 +70,21 @@ export function isValidUsername(username: string): boolean {
  */
 export function sanitizeImageUrl(url: unknown): string | undefined {
   if (typeof url !== 'string' || !url.trim()) return undefined;
-  const trimmed = url.trim().slice(0, MAX_LENGTHS.URL);
+  const trimmed = url.trim();
 
-  try {
-    const parsed = new URL(trimmed);
-    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+  // Soporte para avatares en formato Data URI (fotos subidas localmente)
+  if (trimmed.startsWith('data:image/')) {
+    if (trimmed.length <= MAX_LENGTHS.AVATAR_DATA_URI) {
       return trimmed;
+    }
+    return undefined;
+  }
+
+  const sliced = trimmed.slice(0, MAX_LENGTHS.URL);
+  try {
+    const parsed = new URL(sliced);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return sliced;
     }
   } catch {
     // Si no es URL válida
