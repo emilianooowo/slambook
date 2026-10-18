@@ -8,6 +8,12 @@
   --accent-copper: #94421A;
 }
 
+.dark, [data-theme="dark"] {
+  --background: #121214;
+  --foreground: #F5F5F5;
+  --accent-copper: #C85D2C;
+}
+
 * {
   box-sizing: border-box;
 }

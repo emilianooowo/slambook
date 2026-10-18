@@ -39,7 +39,7 @@ export default function CampusMap({
   };
 
   return (
-    <div className={`relative w-full h-full flex flex-col bg-white overflow-hidden ${className}`}>
+    <div className={`relative w-full h-full flex flex-col bg-white dark:bg-[#18181B] overflow-hidden ${className}`}>
       {/* Contenedor del Mapa MapLibre GL interactivo */}
       <div className="flex-1 w-full h-full min-h-0 relative">
         <UnachCampusMap
@@ -50,16 +50,16 @@ export default function CampusMap({
       </div>
 
       {/* Selectores de Universidad y Campus en la parte inferior */}
-      <footer className="px-4 py-2.5 border-t border-neutral-200/80 bg-white flex flex-wrap items-center gap-4 text-xs select-none flex-shrink-0 z-10 shadow-sm">
+      <footer className="px-4 py-2.5 border-t border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-[#18181B] flex flex-wrap items-center gap-4 text-xs select-none flex-shrink-0 z-10 shadow-sm">
         <div className="flex items-center gap-2">
           {/* Label sin fondo ni bordeado */}
-          <span className="text-neutral-600 font-semibold whitespace-nowrap">
+          <span className="text-neutral-600 dark:text-neutral-300 font-semibold whitespace-nowrap">
             Universidad:
           </span>
           <select
             value={currentCampus.universityId}
             onChange={handleUniversitySelect}
-            className="px-2.5 py-1.5 bg-[#F9F8F6] border border-neutral-300 rounded-xl text-neutral-800 text-xs shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
+            className="px-2.5 py-1.5 bg-[#F9F8F6] dark:bg-[#27272A] border border-neutral-300 dark:border-neutral-700 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
           >
             {universities.map((u) => (
               <option key={u.id} value={u.id}>
@@ -71,13 +71,13 @@ export default function CampusMap({
 
         <div className="flex items-center gap-2">
           {/* Label sin fondo ni bordeado */}
-          <span className="text-neutral-600 font-semibold whitespace-nowrap">
+          <span className="text-neutral-600 dark:text-neutral-300 font-semibold whitespace-nowrap">
             Campus:
           </span>
           <select
             value={currentCampus.slug}
             onChange={handleCampusSelect}
-            className="px-2.5 py-1.5 bg-[#F9F8F6] border border-neutral-300 rounded-xl text-neutral-800 text-xs shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
+            className="px-2.5 py-1.5 bg-[#F9F8F6] dark:bg-[#27272A] border border-neutral-300 dark:border-neutral-700 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
           >
             {campusesForCurrentUni.map((c) => (
               <option key={c.slug} value={c.slug}>

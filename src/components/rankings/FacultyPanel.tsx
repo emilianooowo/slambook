@@ -8,6 +8,7 @@ import {
   Users,
   Search,
   Check,
+  CheckCircle2,
   ChevronRight,
   ArrowLeft,
   X,
@@ -122,10 +123,6 @@ export default function FacultyPanel({
         const sub = await rankingsService.getUserTodaySubmission(campus.slug, user.id);
         setUserSubmission(sub);
         if (sub) {
-          if (sub.song && !selectedSong) setSelectedSong({ title: sub.song, imageUrl: sub.song_image_url });
-          if (sub.artist && !selectedArtist) setSelectedArtist({ title: sub.artist, imageUrl: sub.artist_image_url });
-          if (sub.movie && !selectedMovie) setSelectedMovie({ title: sub.movie, imageUrl: sub.movie_image_url });
-
           const matches = await rankingsService.getMatchingVotes(campus.slug, facultyId, sub);
           setMatchingVotes(matches);
         } else {
@@ -249,10 +246,17 @@ export default function FacultyPanel({
         currentUser
       );
 
+      setSelectedSong(null);
+      setSelectedArtist(null);
+      setSelectedMovie(null);
+      setActiveCategory(null);
+      setSearchQuery('');
+      setSearchResults([]);
+
       showToast('¡Tu voto diario ha sido registrado con éxito!', 'success');
       await loadData();
       if (onVoteSubmitted) onVoteSubmitted();
-      setTab('faculty');
+      setTab('vote');
     } catch (err: any) {
       showToast(err.message || 'Error al enviar voto', 'error');
     } finally {
@@ -267,9 +271,9 @@ export default function FacultyPanel({
     currentRankings.movies.length === 0;
 
   return (
-    <aside className="w-full h-full flex flex-col bg-white border border-neutral-300/80 rounded-2xl p-4 md:p-5 text-neutral-900 overflow-hidden font-sans shadow-skeuo-card">
+    <aside className="w-full h-full flex flex-col bg-white dark:bg-[#18181B] border border-neutral-300/80 dark:border-neutral-800 rounded-2xl p-4 md:p-5 text-neutral-900 dark:text-neutral-100 overflow-hidden font-sans shadow-skeuo-card">
       {/* 1. Selector de Pestañas Superior: Control Segmentado Skeuomorphic */}
-      <nav className="mb-4 p-1 bg-[#EDEAE4] rounded-xl shadow-skeuo-track flex items-center gap-1 select-none flex-shrink-0">
+      <nav className="mb-4 p-1 bg-[#EDEAE4] dark:bg-[#27272A] rounded-xl shadow-skeuo-track flex items-center gap-1 select-none flex-shrink-0">
         <button
           type="button"
           onClick={() => {
@@ -278,8 +282,8 @@ export default function FacultyPanel({
           }}
           className={`flex-1 py-1.5 px-2.5 text-xs font-semibold rounded-lg transition-all text-center truncate ${
             activeTab === 'faculty'
-              ? 'bg-white text-neutral-900 shadow-skeuo-pill'
-              : 'text-neutral-500 hover:text-neutral-900'
+              ? 'bg-white dark:bg-[#18181B] text-neutral-900 dark:text-white shadow-skeuo-pill'
+              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
           }`}
         >
           {currentFaculty.shortName}
@@ -293,8 +297,8 @@ export default function FacultyPanel({
           }}
           className={`flex-1 py-1.5 px-2.5 text-xs font-semibold rounded-lg transition-all text-center truncate ${
             activeTab === 'campus'
-              ? 'bg-white text-neutral-900 shadow-skeuo-pill'
-              : 'text-neutral-500 hover:text-neutral-900'
+              ? 'bg-white dark:bg-[#18181B] text-neutral-900 dark:text-white shadow-skeuo-pill'
+              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
           }`}
         >
           Todo el Campus
@@ -308,8 +312,8 @@ export default function FacultyPanel({
           }}
           className={`flex-1 py-1.5 px-2.5 text-xs font-semibold rounded-lg transition-all text-center truncate ${
             activeTab === 'vote'
-              ? 'bg-[#94421A] text-white shadow-skeuo-btn'
-              : 'text-neutral-500 hover:text-neutral-900'
+              ? 'bg-[#94421A] dark:bg-[#C85D2C] text-white shadow-skeuo-btn'
+              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
           }`}
         >
           Votar
@@ -318,23 +322,23 @@ export default function FacultyPanel({
 
       {/* 2. Cabecera y Filtros de Temporalidad (para Pestañas de Rankings) */}
       {activeTab !== 'vote' && (
-        <div className="pb-3 mb-3 border-b border-neutral-200/70 flex-shrink-0">
-          <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-1">
+        <div className="pb-3 mb-3 border-b border-neutral-200/70 dark:border-neutral-800 flex-shrink-0">
+          <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 mb-1">
             <span>
               {activeTab === 'campus' ? campus.name : campus.shortName}
             </span>
-            <span className="font-semibold text-neutral-700">
+            <span className="font-semibold text-neutral-700 dark:text-neutral-300">
               {currentRankings.totalVotes} {currentRankings.totalVotes === 1 ? 'voto' : 'votos'}
             </span>
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <h1 className="text-sm font-bold text-neutral-900 truncate">
+            <h1 className="text-sm font-bold text-neutral-900 dark:text-white truncate">
               {activeTab === 'campus' ? 'Lo más popular en el Campus' : currentFaculty.name}
             </h1>
 
             {/* Píldoras de Temporalidad táctiles */}
-            <div className="flex items-center gap-1 bg-[#F4F3F0] p-0.5 rounded-lg border border-black/[0.04]">
+            <div className="flex items-center gap-1 bg-[#F4F3F0] dark:bg-[#27272A] p-0.5 rounded-lg border border-black/[0.04] dark:border-white/[0.04]">
               {(['day', 'week', 'all'] as const).map((tab) => {
                 const isActive = timeframe === tab;
                 const label = tab === 'day' ? 'Hoy' : tab === 'week' ? 'Semana' : 'Histórico';
@@ -345,8 +349,8 @@ export default function FacultyPanel({
                     onClick={() => setTimeframe(tab)}
                     className={`px-2 py-0.5 text-[11px] font-medium rounded-md transition-all ${
                       isActive
-                        ? 'bg-white text-[#94421A] font-bold shadow-sm'
-                        : 'text-neutral-500 hover:text-neutral-800'
+                        ? 'bg-white dark:bg-[#18181B] text-[#94421A] dark:text-[#FB923C] font-bold shadow-sm'
+                        : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
                     }`}
                   >
                     {label}
@@ -518,27 +522,166 @@ export default function FacultyPanel({
                   </div>
                 </div>
               </div>
+            ) : userSubmission ? (
+              /* ESTADO: EL USUARIO YA REGISTRÓ SU VOTO HOY */
+              <div className="space-y-4 animate-fade-in py-1">
+                <div className="p-4 bg-[#FAF9F6] dark:bg-[#222226] border border-neutral-200/90 dark:border-neutral-700/80 rounded-2xl shadow-skeuo-card text-center space-y-2">
+                  <div className="w-10 h-10 mx-auto rounded-full bg-[#94421A]/10 dark:bg-[#C85D2C]/20 text-[#94421A] dark:text-[#FB923C] flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+                      ¡Ya registraste tu voto de hoy!
+                    </h3>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 max-w-xs mx-auto leading-relaxed">
+                      Tus elecciones de hoy ya fueron computadas en los rankings. Podrás emitir una nueva selección mañana a partir de las 00:00.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Resumen del voto registrado hoy */}
+                <div className="space-y-2">
+                  <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 block px-1">
+                    Tus elecciones para el día de hoy:
+                  </span>
+
+                  <div className="p-3 bg-white dark:bg-[#1E1E22] border border-neutral-200/90 dark:border-neutral-800 rounded-xl space-y-2.5 shadow-sm">
+                    {userSubmission.faculty_id && (
+                      <div className="text-[11px] text-neutral-500 dark:text-neutral-400 pb-2 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+                        <span>Facultad representada:</span>
+                        <strong className="text-neutral-900 dark:text-neutral-200 font-semibold">
+                          {campus.faculties.find((f) => f.id === userSubmission.faculty_id)?.name || userSubmission.faculty_id}
+                        </strong>
+                      </div>
+                    )}
+
+                    {userSubmission.song && (
+                      <div className="flex items-center gap-2.5">
+                        {userSubmission.song_image_url ? (
+                          <MediaImage
+                            src={userSubmission.song_image_url}
+                            alt={userSubmission.song}
+                            type="song"
+                            className="w-9 h-9 rounded-lg object-cover shadow-sm flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-[#EDEAE4] dark:bg-[#27272A] text-neutral-500 flex items-center justify-center flex-shrink-0">
+                            <Music className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-medium">
+                            Canción favorita
+                          </span>
+                          <span className="text-xs font-semibold text-neutral-900 dark:text-white truncate block">
+                            {userSubmission.song}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {userSubmission.artist && (
+                      <div className="flex items-center gap-2.5">
+                        {userSubmission.artist_image_url ? (
+                          <MediaImage
+                            src={userSubmission.artist_image_url}
+                            alt={userSubmission.artist}
+                            type="artist"
+                            className="w-9 h-9 rounded-full object-cover shadow-sm flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-[#EDEAE4] dark:bg-[#27272A] text-neutral-500 flex items-center justify-center flex-shrink-0">
+                            <Mic2 className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-medium">
+                            Artista favorito
+                          </span>
+                          <span className="text-xs font-semibold text-neutral-900 dark:text-white truncate block">
+                            {userSubmission.artist}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {userSubmission.movie && (
+                      <div className="flex items-center gap-2.5">
+                        {userSubmission.movie_image_url ? (
+                          <MediaImage
+                            src={userSubmission.movie_image_url}
+                            alt={userSubmission.movie}
+                            type="movie"
+                            className="w-8 h-9 rounded-md object-cover shadow-sm flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-8 h-9 rounded-md bg-[#EDEAE4] dark:bg-[#27272A] text-neutral-500 flex items-center justify-center flex-shrink-0">
+                            <Film className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-medium">
+                            Película favorita
+                          </span>
+                          <span className="text-xs font-semibold text-neutral-900 dark:text-white truncate block">
+                            {userSubmission.movie}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Coincidencias con otros estudiantes */}
+                {matchingVotes.length > 0 && (
+                  <div className="p-3 bg-[#FAF9F6] dark:bg-[#222226] border border-neutral-200/80 dark:border-neutral-700/80 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-[#94421A] dark:text-[#FB923C]" />
+                        <span>Coincidencias ({matchingVotes.reduce((acc, m) => acc + m.voterCount, 0)})</span>
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Otros estudiantes en el campus votaron por tus mismos gustos hoy.
+                    </p>
+                  </div>
+                )}
+
+                {/* Acciones para explorar rankings */}
+                <div className="pt-2 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTab('faculty')}
+                    className="w-full py-2.5 px-4 bg-[#94421A] hover:bg-[#7D3412] dark:bg-[#C85D2C] dark:hover:bg-[#B24E21] text-white text-xs font-semibold rounded-xl shadow-skeuo-btn active:translate-y-[1px] transition-all text-center"
+                  >
+                    Ver ranking de {currentFaculty.shortName}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTab('campus')}
+                    className="w-full py-2 px-4 bg-white dark:bg-[#27272A] border border-neutral-300/80 dark:border-neutral-700 hover:bg-[#FAF9F7] dark:hover:bg-[#323238] text-neutral-700 dark:text-neutral-200 text-xs font-semibold rounded-xl shadow-skeuo-btn-neutral active:translate-y-[1px] transition-all text-center"
+                  >
+                    Ver ranking de todo el Campus
+                  </button>
+                </div>
+              </div>
             ) : (
-              /* ESTADO AUTENTICADO: 3 RANURAS DE VOTO INTEGRADO */
+              /* ESTADO AUTENTICADO: 3 RANURAS DE VOTO INTEGRADO DISPONIBLES */
               <div className="space-y-3.5">
-                <div className="flex items-center justify-between text-[11px] text-neutral-500">
-                  <span>Sesión: <strong className="text-neutral-800 font-semibold">{currentUser.username}</strong></span>
-                  {userSubmission && (
-                    <span className="text-[#94421A] font-semibold flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> Ya votaste hoy
-                    </span>
-                  )}
+                <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
+                  <span>Sesión: <strong className="text-neutral-800 dark:text-neutral-200 font-semibold">{currentUser.username}</strong></span>
                 </div>
 
                 {/* Selector de Facultad */}
                 <div>
-                  <span className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <span className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Facultad que representas
                   </span>
                   <select
                     value={voteFacultyId}
                     onChange={(e) => setVoteFacultyId(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs text-neutral-900 shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
+                    className="w-full px-3 py-2 bg-white dark:bg-[#27272A] border border-neutral-300 dark:border-neutral-700 rounded-xl text-xs text-neutral-900 dark:text-white shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
                   >
                     {campus.faculties.map((f) => (
                       <option key={f.id} value={f.id}>
@@ -555,7 +698,7 @@ export default function FacultyPanel({
                     setSearchQuery('');
                     setSearchResults([]);
                   }}
-                  className="cursor-pointer flex items-center justify-between p-2.5 bg-white hover:bg-[#F9F8F6] border border-neutral-200/90 rounded-xl shadow-skeuo-btn-neutral transition-all group"
+                  className="cursor-pointer flex items-center justify-between p-2.5 bg-white dark:bg-[#222226] hover:bg-[#F9F8F6] dark:hover:bg-[#2A2A30] border border-neutral-200/90 dark:border-neutral-700/80 rounded-xl shadow-skeuo-btn-neutral transition-all group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     {selectedSong?.imageUrl ? (
@@ -566,15 +709,15 @@ export default function FacultyPanel({
                         className="w-9 h-9 rounded-lg object-cover shadow-sm flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-9 h-9 rounded-lg bg-[#EDEAE4] text-neutral-500 flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-lg bg-[#EDEAE4] dark:bg-[#27272A] text-neutral-500 flex items-center justify-center flex-shrink-0">
                         <Music className="w-4 h-4" />
                       </div>
                     )}
                     <div className="min-w-0">
-                      <span className="text-[10px] text-neutral-400 block font-medium">
+                      <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-medium">
                         1. Canción favorita
                       </span>
-                      <span className="text-xs font-semibold text-neutral-900 truncate block group-hover:text-[#94421A]">
+                      <span className="text-xs font-semibold text-neutral-900 dark:text-white truncate block group-hover:text-[#94421A] dark:group-hover:text-[#FB923C]">
                         {selectedSong ? selectedSong.title : 'Buscar canción...'}
                       </span>
                     </div>
@@ -586,12 +729,12 @@ export default function FacultyPanel({
                         e.stopPropagation();
                         setSelectedSong(null);
                       }}
-                      className="p-1 text-neutral-400 hover:text-neutral-700"
+                      className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700" />
+                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-200" />
                   )}
                 </div>
 
@@ -602,7 +745,7 @@ export default function FacultyPanel({
                     setSearchQuery('');
                     setSearchResults([]);
                   }}
-                  className="cursor-pointer flex items-center justify-between p-2.5 bg-white hover:bg-[#F9F8F6] border border-neutral-200/90 rounded-xl shadow-skeuo-btn-neutral transition-all group"
+                  className="cursor-pointer flex items-center justify-between p-2.5 bg-white dark:bg-[#222226] hover:bg-[#F9F8F6] dark:hover:bg-[#2A2A30] border border-neutral-200/90 dark:border-neutral-700/80 rounded-xl shadow-skeuo-btn-neutral transition-all group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     {selectedArtist?.imageUrl ? (
@@ -613,15 +756,15 @@ export default function FacultyPanel({
                         className="w-9 h-9 rounded-full object-cover shadow-sm flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-9 h-9 rounded-full bg-[#EDEAE4] text-neutral-500 flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-[#EDEAE4] dark:bg-[#27272A] text-neutral-500 flex items-center justify-center flex-shrink-0">
                         <Mic2 className="w-4 h-4" />
                       </div>
                     )}
                     <div className="min-w-0">
-                      <span className="text-[10px] text-neutral-400 block font-medium">
+                      <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-medium">
                         2. Artista favorito
                       </span>
-                      <span className="text-xs font-semibold text-neutral-900 truncate block group-hover:text-[#94421A]">
+                      <span className="text-xs font-semibold text-neutral-900 dark:text-white truncate block group-hover:text-[#94421A] dark:group-hover:text-[#FB923C]">
                         {selectedArtist ? selectedArtist.title : 'Buscar artista...'}
                       </span>
                     </div>
@@ -633,12 +776,12 @@ export default function FacultyPanel({
                         e.stopPropagation();
                         setSelectedArtist(null);
                       }}
-                      className="p-1 text-neutral-400 hover:text-neutral-700"
+                      className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700" />
+                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-200" />
                   )}
                 </div>
 
@@ -649,7 +792,7 @@ export default function FacultyPanel({
                     setSearchQuery('');
                     setSearchResults([]);
                   }}
-                  className="cursor-pointer flex items-center justify-between p-2.5 bg-white hover:bg-[#F9F8F6] border border-neutral-200/90 rounded-xl shadow-skeuo-btn-neutral transition-all group"
+                  className="cursor-pointer flex items-center justify-between p-2.5 bg-white dark:bg-[#222226] hover:bg-[#F9F8F6] dark:hover:bg-[#2A2A30] border border-neutral-200/90 dark:border-neutral-700/80 rounded-xl shadow-skeuo-btn-neutral transition-all group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     {selectedMovie?.imageUrl ? (
@@ -660,15 +803,15 @@ export default function FacultyPanel({
                         className="w-8 h-9 rounded-md object-cover shadow-sm flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-8 h-9 rounded-md bg-[#EDEAE4] text-neutral-500 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-9 rounded-md bg-[#EDEAE4] dark:bg-[#27272A] text-neutral-500 flex items-center justify-center flex-shrink-0">
                         <Film className="w-4 h-4" />
                       </div>
                     )}
                     <div className="min-w-0">
-                      <span className="text-[10px] text-neutral-400 block font-medium">
+                      <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-medium">
                         3. Película favorita
                       </span>
-                      <span className="text-xs font-semibold text-neutral-900 truncate block group-hover:text-[#94421A]">
+                      <span className="text-xs font-semibold text-neutral-900 dark:text-white truncate block group-hover:text-[#94421A] dark:group-hover:text-[#FB923C]">
                         {selectedMovie ? selectedMovie.title : 'Buscar película...'}
                       </span>
                     </div>
@@ -680,12 +823,12 @@ export default function FacultyPanel({
                         e.stopPropagation();
                         setSelectedMovie(null);
                       }}
-                      className="p-1 text-neutral-400 hover:text-neutral-700"
+                      className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700" />
+                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-200" />
                   )}
                 </div>
 
@@ -694,7 +837,7 @@ export default function FacultyPanel({
                   type="button"
                   onClick={handleSubmitVote}
                   disabled={isSubmitting || (!selectedSong && !selectedArtist && !selectedMovie)}
-                  className="w-full py-2.5 px-4 bg-[#94421A] hover:bg-[#7D3412] disabled:bg-neutral-300 disabled:shadow-none text-white text-xs font-semibold rounded-xl shadow-skeuo-btn active:translate-y-[1px] transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 bg-[#94421A] hover:bg-[#7D3412] dark:bg-[#C85D2C] dark:hover:bg-[#B24E21] disabled:bg-neutral-300 dark:disabled:bg-neutral-800 disabled:shadow-none text-white text-xs font-semibold rounded-xl shadow-skeuo-btn active:translate-y-[1px] transition-all flex items-center justify-center gap-2"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>{isSubmitting ? 'Registrando...' : 'Registrar voto diario'}</span>
@@ -709,16 +852,16 @@ export default function FacultyPanel({
           <div className="space-y-4 animate-fade-in">
             {/* Voto del usuario hoy y coincidencias (solo en pestaña Facultad) */}
             {activeTab === 'faculty' && currentUser && (
-              <section className="p-3 bg-[#FAF9F6] border border-neutral-200/80 rounded-xl space-y-2 shadow-skeuo-card">
+              <section className="p-3 bg-[#FAF9F6] dark:bg-[#222226] border border-neutral-200/80 dark:border-neutral-800 rounded-xl space-y-2 shadow-skeuo-card">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-neutral-900">
+                  <span className="font-bold text-neutral-900 dark:text-white">
                     Tu voto de hoy
                   </span>
                   {userSubmission && matchingVotes.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setShowMatches(!showMatches)}
-                      className="text-xs text-[#94421A] hover:underline font-semibold flex items-center gap-1"
+                      className="text-xs text-[#94421A] dark:text-[#FB923C] hover:underline font-semibold flex items-center gap-1"
                     >
                       <Users className="w-3 h-3" />
                       {showMatches
@@ -729,12 +872,12 @@ export default function FacultyPanel({
                 </div>
 
                 {userSubmission ? (
-                  <div className="space-y-1 text-neutral-700 text-xs">
+                  <div className="space-y-1 text-neutral-700 dark:text-neutral-300 text-xs">
                     {userSubmission.song && (
                       <div className="flex items-center gap-1.5">
                         <Music className="w-3 h-3 text-neutral-400" />
-                        <span className="text-neutral-400">Canción:</span>
-                        <span className="font-semibold text-neutral-900 truncate">
+                        <span className="text-neutral-400 dark:text-neutral-500">Canción:</span>
+                        <span className="font-semibold text-neutral-900 dark:text-white truncate">
                           {userSubmission.song}
                         </span>
                       </div>
@@ -742,8 +885,8 @@ export default function FacultyPanel({
                     {userSubmission.artist && (
                       <div className="flex items-center gap-1.5">
                         <Mic2 className="w-3 h-3 text-neutral-400" />
-                        <span className="text-neutral-400">Artista:</span>
-                        <span className="font-semibold text-neutral-900 truncate">
+                        <span className="text-neutral-400 dark:text-neutral-500">Artista:</span>
+                        <span className="font-semibold text-neutral-900 dark:text-white truncate">
                           {userSubmission.artist}
                         </span>
                       </div>
@@ -751,28 +894,28 @@ export default function FacultyPanel({
                     {userSubmission.movie && (
                       <div className="flex items-center gap-1.5">
                         <Film className="w-3 h-3 text-neutral-400" />
-                        <span className="text-neutral-400">Película:</span>
-                        <span className="font-semibold text-neutral-900 truncate">
+                        <span className="text-neutral-400 dark:text-neutral-500">Película:</span>
+                        <span className="font-semibold text-neutral-900 dark:text-white truncate">
                           {userSubmission.movie}
                         </span>
                       </div>
                     )}
 
                     {showMatches && matchingVotes.length > 0 && (
-                      <div className="mt-2.5 pt-2 border-t border-neutral-200/80 space-y-1.5">
-                        <span className="text-[11px] font-semibold text-[#94421A] block">
+                      <div className="mt-2.5 pt-2 border-t border-neutral-200/80 dark:border-neutral-800 space-y-1.5">
+                        <span className="text-[11px] font-semibold text-[#94421A] dark:text-[#FB923C] block">
                           Estudiantes con el mismo voto:
                         </span>
                         {matchingVotes.map((mv) => (
                           <div key={mv.category} className="space-y-0.5">
-                            <span className="text-[10px] text-neutral-500 block">
+                            <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block">
                               En {mv.category === 'song' ? 'canción' : mv.category === 'artist' ? 'artista' : 'película'}: &ldquo;{mv.itemTitle}&rdquo;
                             </span>
                             <div className="flex flex-wrap gap-1.5">
                               {mv.voters.map((v) => (
                                 <span
                                   key={v.userId}
-                                  className="text-[11px] font-medium text-neutral-800 bg-white px-2 py-0.5 rounded-md border border-neutral-200 shadow-sm"
+                                  className="text-[11px] font-medium text-neutral-800 dark:text-neutral-200 bg-white dark:bg-[#2A2A30] px-2 py-0.5 rounded-md border border-neutral-200 dark:border-neutral-700 shadow-sm"
                                 >
                                   {v.displayName}
                                 </span>
@@ -784,12 +927,12 @@ export default function FacultyPanel({
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between text-xs text-neutral-500">
+                  <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
                     <span>Aún no has votado hoy.</span>
                     <button
                       type="button"
                       onClick={() => setTab('vote')}
-                      className="text-[#94421A] hover:underline font-semibold"
+                      className="text-[#94421A] dark:text-[#FB923C] hover:underline font-semibold"
                     >
                       Votar ahora
                     </button>
@@ -805,10 +948,10 @@ export default function FacultyPanel({
               </div>
             ) : isRankingsEmpty ? (
               <div className="py-14 text-center space-y-2 animate-fade-in">
-                <p className="text-xs font-bold text-neutral-800">
+                <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
                   Aún no hay votos registrados
                 </p>
-                <p className="text-[11px] text-neutral-500 max-w-xs mx-auto leading-relaxed">
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 max-w-xs mx-auto leading-relaxed">
                   {activeTab === 'campus'
                     ? 'No hay registros en el campus en este período.'
                     : `Sé el primero en votar en ${currentFaculty.shortName} para posicionar tus favoritos.`}
@@ -816,7 +959,7 @@ export default function FacultyPanel({
                 <button
                   type="button"
                   onClick={() => setTab('vote')}
-                  className="mt-2 py-1.5 px-3.5 bg-white border border-neutral-300 text-neutral-800 text-xs font-semibold rounded-xl shadow-skeuo-btn-neutral hover:bg-neutral-50 active:translate-y-[1px] transition-all"
+                  className="mt-2 py-1.5 px-3.5 bg-white dark:bg-[#27272A] border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-semibold rounded-xl shadow-skeuo-btn-neutral hover:bg-neutral-50 dark:hover:bg-[#323238] active:translate-y-[1px] transition-all"
                 >
                   Registrar primer voto
                 </button>
@@ -825,8 +968,8 @@ export default function FacultyPanel({
               <div className="space-y-4">
                 {/* TOP CANCIONES */}
                 <section className="space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
-                    <Music className="w-3.5 h-3.5 text-neutral-500" />
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                    <Music className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                     <span>Top Canciones</span>
                   </div>
                   {currentRankings.songs.length === 0 ? (
@@ -836,23 +979,23 @@ export default function FacultyPanel({
                       {currentRankings.songs.map((song, idx) => (
                         <div
                           key={song.name}
-                          className="flex items-center gap-2.5 p-1.5 bg-white border border-neutral-200/60 rounded-xl hover:bg-neutral-50/80 transition-colors shadow-sm"
+                          className="flex items-center gap-2.5 p-1.5 bg-white dark:bg-[#222226] border border-neutral-200/60 dark:border-neutral-800 rounded-xl hover:bg-neutral-50/80 dark:hover:bg-[#2A2A30] transition-colors shadow-sm"
                         >
-                          <span className="w-4 text-center font-bold text-neutral-400 text-xs">
+                          <span className="w-4 text-center font-bold text-neutral-400 dark:text-neutral-500 text-xs">
                             {idx + 1}
                           </span>
                           <MediaImage
                             src={song.imageUrl}
                             alt={song.name}
                             type="song"
-                            className="w-9 h-9 rounded-lg object-cover border border-neutral-100 flex-shrink-0 shadow-sm"
+                            className="w-9 h-9 rounded-lg object-cover border border-neutral-100 dark:border-neutral-800 flex-shrink-0 shadow-sm"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-neutral-900 truncate">
+                            <div className="font-semibold text-neutral-900 dark:text-white truncate">
                               {song.name}
                             </div>
                           </div>
-                          <span className="font-bold text-neutral-600 text-xs px-1">
+                          <span className="font-bold text-neutral-600 dark:text-neutral-300 text-xs px-1">
                             {song.count}
                           </span>
                         </div>
@@ -863,8 +1006,8 @@ export default function FacultyPanel({
 
                 {/* TOP ARTISTAS */}
                 <section className="space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
-                    <Mic2 className="w-3.5 h-3.5 text-neutral-500" />
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                    <Mic2 className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                     <span>Top Artistas</span>
                   </div>
                   {currentRankings.artists.length === 0 ? (
@@ -874,23 +1017,23 @@ export default function FacultyPanel({
                       {currentRankings.artists.map((artist, idx) => (
                         <div
                           key={artist.name}
-                          className="flex items-center gap-2.5 p-1.5 bg-white border border-neutral-200/60 rounded-xl hover:bg-neutral-50/80 transition-colors shadow-sm"
+                          className="flex items-center gap-2.5 p-1.5 bg-white dark:bg-[#222226] border border-neutral-200/60 dark:border-neutral-800 rounded-xl hover:bg-neutral-50/80 dark:hover:bg-[#2A2A30] transition-colors shadow-sm"
                         >
-                          <span className="w-4 text-center font-bold text-neutral-400 text-xs">
+                          <span className="w-4 text-center font-bold text-neutral-400 dark:text-neutral-500 text-xs">
                             {idx + 1}
                           </span>
                           <MediaImage
                             src={artist.imageUrl}
                             alt={artist.name}
                             type="artist"
-                            className="w-9 h-9 rounded-full object-cover border border-neutral-100 flex-shrink-0 shadow-sm"
+                            className="w-9 h-9 rounded-full object-cover border border-neutral-100 dark:border-neutral-800 flex-shrink-0 shadow-sm"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-neutral-900 truncate">
+                            <div className="font-semibold text-neutral-900 dark:text-white truncate">
                               {artist.name}
                             </div>
                           </div>
-                          <span className="font-bold text-neutral-600 text-xs px-1">
+                          <span className="font-bold text-neutral-600 dark:text-neutral-300 text-xs px-1">
                             {artist.count}
                           </span>
                         </div>
@@ -901,8 +1044,8 @@ export default function FacultyPanel({
 
                 {/* TOP PELÍCULAS */}
                 <section className="space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
-                    <Film className="w-3.5 h-3.5 text-neutral-500" />
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                    <Film className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                     <span>Top Películas</span>
                   </div>
                   {currentRankings.movies.length === 0 ? (
@@ -912,23 +1055,23 @@ export default function FacultyPanel({
                       {currentRankings.movies.map((movie, idx) => (
                         <div
                           key={movie.name}
-                          className="flex items-center gap-2.5 p-1.5 bg-white border border-neutral-200/60 rounded-xl hover:bg-neutral-50/80 transition-colors shadow-sm"
+                          className="flex items-center gap-2.5 p-1.5 bg-white dark:bg-[#222226] border border-neutral-200/60 dark:border-neutral-800 rounded-xl hover:bg-neutral-50/80 dark:hover:bg-[#2A2A30] transition-colors shadow-sm"
                         >
-                          <span className="w-4 text-center font-bold text-neutral-400 text-xs">
+                          <span className="w-4 text-center font-bold text-neutral-400 dark:text-neutral-500 text-xs">
                             {idx + 1}
                           </span>
                           <MediaImage
                             src={movie.imageUrl}
                             alt={movie.name}
                             type="movie"
-                            className="w-8 h-10 rounded-lg object-cover border border-neutral-100 flex-shrink-0 shadow-sm"
+                            className="w-8 h-10 rounded-lg object-cover border border-neutral-100 dark:border-neutral-800 flex-shrink-0 shadow-sm"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-neutral-900 truncate">
+                            <div className="font-semibold text-neutral-900 dark:text-white truncate">
                               {movie.name}
                             </div>
                           </div>
-                          <span className="font-bold text-neutral-600 text-xs px-1">
+                          <span className="font-bold text-neutral-600 dark:text-neutral-300 text-xs px-1">
                             {movie.count}
                           </span>
                         </div>

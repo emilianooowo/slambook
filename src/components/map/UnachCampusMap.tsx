@@ -11,6 +11,7 @@ import Map, {
   LayerProps,
   MapLayerMouseEvent,
 } from 'react-map-gl/maplibre';
+import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import facultiesGeoJson from './faculties.geojson';
@@ -213,7 +214,7 @@ function UnachCampusMapInternal({
     source: 'faculties-source',
     layout: {
       'text-field': ['get', 'shortName'],
-      'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+      'text-font': ['Noto Sans Bold'],
       'text-size': 13,
       'text-anchor': 'center',
       'text-allow-overlap': true,
@@ -225,8 +226,8 @@ function UnachCampusMapInternal({
         colors.textSelected,
         colors.text,
       ],
-      'text-halo-color': themeMode === 'dark' ? '#111317' : '#FFFFFF',
-      'text-halo-width': 1.8,
+      'text-halo-color': themeMode === 'dark' ? '#0F172A' : '#FFFFFF',
+      'text-halo-width': 2,
     },
   };
 
@@ -239,6 +240,7 @@ function UnachCampusMapInternal({
       <div className={styles.mapWrapper}>
         <Map
           ref={mapRef}
+          mapLib={maplibregl}
           initialViewState={INITIAL_VIEW_STATE}
           maxBounds={MAP_BOUNDS.maxBounds}
           minZoom={MAP_BOUNDS.minZoom}
@@ -256,6 +258,7 @@ function UnachCampusMapInternal({
           <NavigationControl position="bottom-right" showCompass={true} />
 
           <Source
+            key={`faculties-source-${themeMode}`}
             id="faculties-source"
             type="geojson"
             data={facultiesGeoJson as any}
@@ -291,7 +294,7 @@ const UnachCampusMap = dynamic(() => Promise.resolve(UnachCampusMapInternal), {
   ssr: false,
   loading: () => (
     <div className={styles.container}>
-      <div className="w-full h-full min-h-[380px] bg-[#F5F4F0] flex items-center justify-center text-xs text-neutral-400 font-medium animate-pulse">
+      <div className="w-full h-full min-h-[380px] bg-[#F5F4F0] dark:bg-[#121214] flex items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 font-medium animate-pulse">
         Cargando mapa interactivo de la UNACH...
       </div>
     </div>

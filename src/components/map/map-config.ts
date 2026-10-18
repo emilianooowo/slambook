@@ -17,18 +17,18 @@ export interface MapThemeColors {
 }
 
 export const MAP_STYLES = {
-  light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  light: 'https://tiles.openfreemap.org/styles/positron',
+  dark: 'https://tiles.openfreemap.org/styles/dark',
 } as const;
 
 export type MapThemeMode = 'light' | 'dark';
 
 export const MAP_COLORS: Record<MapThemeMode, MapThemeColors> = {
   light: {
-    fill: '#F4F2EC',
-    fillHover: '#E8E3D7',
+    fill: '#FFFFFF',
+    fillHover: '#FAF3E8',
     fillSelected: '#94421A', // Acento Sienna Bronce
-    stroke: '#2D2823',
+    stroke: '#78716C',
     strokeSelected: '#612509',
     text: '#1C1917',
     textSelected: '#FFFFFF',
@@ -38,17 +38,17 @@ export const MAP_COLORS: Record<MapThemeMode, MapThemeColors> = {
     extrusionColor: '#E2DDD0',
   },
   dark: {
-    fill: '#1B1E24',
-    fillHover: '#2A303C',
-    fillSelected: '#C85D2C', // Acento para alto contraste en fondo oscuro
-    stroke: '#E8E5DF',
-    strokeSelected: '#FFB088',
-    text: '#F5F5F4',
+    fill: '#1E293B',
+    fillHover: '#334155',
+    fillSelected: '#C85D2C', // Acento vibrante para fondo oscuro
+    stroke: '#94A3B8',
+    strokeSelected: '#FFA07A',
+    text: '#F8FAFC',
     textSelected: '#FFFFFF',
-    tooltipBg: '#F5F5F4',
-    tooltipText: '#0F1115',
-    tooltipMuted: '#94421A',
-    extrusionColor: '#242932',
+    tooltipBg: '#18181B',
+    tooltipText: '#F4F4F5',
+    tooltipMuted: '#FB923C',
+    extrusionColor: '#27272A',
   },
 };
 
