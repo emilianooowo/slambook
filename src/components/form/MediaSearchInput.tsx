@@ -138,7 +138,7 @@ export default function MediaSearchInput({
             <button
               type="button"
               onClick={handleClear}
-              className="text-xs text-neutral-400 hover:text-[#8A4222] transition-colors px-1"
+              className="text-xs text-neutral-400 hover:text-[#94421A] transition-colors px-1"
               title="Cambiar"
             >
               ✕
@@ -157,7 +157,7 @@ export default function MediaSearchInput({
             }}
             placeholder={placeholder}
             maxLength={100}
-            className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-neutral-900 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-[#8A4222] transition-colors"
+            className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-xl text-neutral-900 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-[#94421A] shadow-skeuo-inset transition-colors"
           />
 
           {loading && (

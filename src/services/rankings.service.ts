@@ -146,6 +146,99 @@ class RankingsService {
     }
   }
 
+  async getCampusRankings(
+    campusSlug: string,
+    timeframe: Timeframe
+  ): Promise<FacultyRankings> {
+    if (this.isMockMode()) {
+      const allSubmissions = this.initMockDataIfNeeded();
+      const today = getTodayDateString();
+      const sevenDaysAgo = getDateDaysAgoString(7);
+
+      const filtered = allSubmissions.filter((sub) => {
+        if (sub.campus_slug !== campusSlug) {
+          return false;
+        }
+        if (timeframe === 'day') {
+          return sub.submission_date === today;
+        } else if (timeframe === 'week') {
+          return sub.submission_date >= sevenDaysAgo;
+        }
+        return true;
+      });
+
+      return {
+        songs: this.calculateTopWithImages(
+          filtered
+            .filter((s) => Boolean(s.song))
+            .map((s) => ({ name: s.song!, imageUrl: s.song_image_url })),
+          5
+        ),
+        artists: this.calculateTopWithImages(
+          filtered
+            .filter((s) => Boolean(s.artist))
+            .map((s) => ({ name: s.artist!, imageUrl: s.artist_image_url })),
+          5
+        ),
+        movies: this.calculateTopWithImages(
+          filtered
+            .filter((s) => Boolean(s.movie))
+            .map((s) => ({ name: s.movie!, imageUrl: s.movie_image_url })),
+          5
+        ),
+        totalVotes: filtered.length,
+      };
+    }
+
+    const supabase = createClient();
+    if (!supabase) {
+      return { songs: [], artists: [], movies: [], totalVotes: 0 };
+    }
+
+    try {
+      let query = supabase
+        .from('daily_submissions')
+        .select('*')
+        .eq('campus_slug', campusSlug);
+
+      const today = getTodayDateString();
+      if (timeframe === 'day') {
+        query = query.eq('submission_date', today);
+      } else if (timeframe === 'week') {
+        query = query.gte('submission_date', getDateDaysAgoString(7));
+      }
+
+      const { data, error } = await query;
+      if (error || !data) {
+        return { songs: [], artists: [], movies: [], totalVotes: 0 };
+      }
+
+      return {
+        songs: this.calculateTopWithImages(
+          data
+            .filter((r) => Boolean(r.song))
+            .map((r) => ({ name: r.song, imageUrl: r.song_image_url })),
+          5
+        ),
+        artists: this.calculateTopWithImages(
+          data
+            .filter((r) => Boolean(r.artist))
+            .map((r) => ({ name: r.artist, imageUrl: r.artist_image_url })),
+          5
+        ),
+        movies: this.calculateTopWithImages(
+          data
+            .filter((r) => Boolean(r.movie))
+            .map((r) => ({ name: r.movie, imageUrl: r.movie_image_url })),
+          5
+        ),
+        totalVotes: data.length,
+      };
+    } catch {
+      return { songs: [], artists: [], movies: [], totalVotes: 0 };
+    }
+  }
+
   async getUserTodaySubmission(
     campusSlug: string,
     userId: string

@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="h-screen w-screen overflow-hidden bg-[#f9f9f9] text-neutral-900 m-0 p-0 antialiased selection:bg-[#8A4222]/15 selection:text-[#8A4222]">
+      <body className="h-screen w-screen overflow-hidden bg-[#F5F4F0] text-neutral-900 m-0 p-0 antialiased selection:bg-[#94421A]/20 selection:text-[#94421A]">
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

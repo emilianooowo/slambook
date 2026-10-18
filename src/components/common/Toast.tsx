@@ -39,7 +39,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {/* Contenedor flotante de Toasts */}
       <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none w-full max-w-sm px-4">
         {toasts.map((toast) => {
-          let icon = <Check className="w-4 h-4 text-[#8A4222]" />;
+          let icon = <Check className="w-4 h-4 text-[#94421A]" />;
           if (toast.type === 'error') {
             icon = <AlertCircle className="w-4 h-4 text-rose-600" />;
           } else if (toast.type === 'info') {
@@ -49,7 +49,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           return (
             <div
               key={toast.id}
-              className="pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 bg-white border border-neutral-100 rounded-xl shadow-toast text-xs font-sans text-neutral-800 animate-slide-down w-full"
+              className="pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 bg-white border border-neutral-300/80 rounded-xl shadow-skeuo-card text-xs font-sans text-neutral-800 animate-slide-down w-full"
               role="alert"
             >
               <div className="flex items-center gap-2.5 min-w-0">

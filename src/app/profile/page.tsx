@@ -1,88 +1,38 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Camera, ArrowLeft, Trash2, Check, AlertTriangle, User } from 'lucide-react';
+import { ArrowLeft, Trash2, User, LogIn, Check } from 'lucide-react';
 import { AuthUser } from '@/types/slambook.types';
 import { authService } from '@/services/auth.service';
-import { DEFAULT_CAMPUS_SLUG } from '@/config/campuses';
+import { DEFAULT_CAMPUS_SLUG, getCampusBySlug } from '@/config/campuses';
 import { isValidUsername, sanitizeInput, MAX_LENGTHS } from '@/lib/security';
 import { useToast } from '@/components/common/Toast';
-
-const PRESET_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=faces',
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=faces',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=faces',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=faces',
-  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop&crop=faces',
-];
 
 export default function ProfilePage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const campus = getCampusBySlug(DEFAULT_CAMPUS_SLUG);
 
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [username, setUsername] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Campos para probar la creación de una cuenta
+  const [testEmail, setTestEmail] = useState('');
+  const [testUsername, setTestUsername] = useState('');
 
   useEffect(() => {
     authService.getCurrentUser().then((user) => {
       setCurrentUser(user);
       if (user) {
         setUsername(user.username || user.email.split('@')[0]);
-        setAvatarUrl(user.avatarUrl || PRESET_AVATARS[0]);
       }
     });
   }, []);
-
-  // Procesa y comprime la foto subida localmente para mantener el rendimiento y no exceder límites
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      showToast('Por favor selecciona un archivo de imagen válido', 'error');
-      return;
-    }
-
-    // Límite de tamaño de archivo original: 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('La imagen original no debe superar 5MB', 'error');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        // Redimensionar a un avatar circular óptimo de 200x200
-        const canvas = document.createElement('canvas');
-        const size = 200;
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-
-        if (ctx) {
-          const minDim = Math.min(img.width, img.height);
-          const sx = (img.width - minDim) / 2;
-          const sy = (img.height - minDim) / 2;
-          ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
-
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          setAvatarUrl(compressedDataUrl);
-          showToast('Foto cargada correctamente', 'success');
-        }
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +54,6 @@ export default function ProfilePage() {
     try {
       await authService.updateProfile(currentUser.id, {
         username: cleanUsername,
-        avatarUrl: avatarUrl || PRESET_AVATARS[0],
       });
 
       showToast('Perfil actualizado correctamente', 'success');
@@ -113,7 +62,6 @@ export default function ProfilePage() {
           ? {
               ...prev,
               username: cleanUsername,
-              avatarUrl: avatarUrl || PRESET_AVATARS[0],
             }
           : null
       );
@@ -121,6 +69,27 @@ export default function ProfilePage() {
       showToast(err.message || 'Error al guardar perfil', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateTestAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    const domain = campus?.allowedDomain || 'unach.mx';
+    const emailToUse = testEmail.trim()
+      ? testEmail.includes('@')
+        ? testEmail.trim()
+        : `${testEmail.trim()}@${domain}`
+      : `estudiante.${Math.floor(Math.random() * 899 + 100)}@${domain}`;
+
+    try {
+      const newUser = authService.createTestAccount(emailToUse, testUsername.trim() || undefined);
+      setCurrentUser(newUser);
+      setUsername(newUser.username || '');
+      setTestEmail('');
+      setTestUsername('');
+      showToast(`¡Cuenta de prueba creada! Sesión iniciada como: ${newUser.username}`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Error al crear cuenta', 'error');
     }
   };
 
@@ -138,7 +107,7 @@ export default function ProfilePage() {
     try {
       await authService.deleteAccount(currentUser.id);
       showToast('Tu cuenta y votos asociados han sido eliminados', 'info');
-      setShowDeleteModal(false);
+      setShowConfirmDelete(false);
       setCurrentUser(null);
       router.push(`/${DEFAULT_CAMPUS_SLUG}`);
     } catch (err: any) {
@@ -148,119 +117,125 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f9f9f9] text-neutral-900 font-sans flex flex-col">
-      {/* Header minimalista sin fondos ni bordes en labels */}
-      <header className="h-14 bg-white border-b border-neutral-200 px-6 flex items-center justify-between">
+    <div className="min-h-screen bg-[#F5F4F0] text-neutral-900 font-sans flex flex-col">
+      {/* Header minimalista skeuomorphic */}
+      <header className="h-14 bg-white border-b border-neutral-300/80 px-6 flex items-center justify-between shadow-sm select-none">
         <Link
           href={`/${DEFAULT_CAMPUS_SLUG}`}
-          className="text-xs text-neutral-600 hover:text-[#8A4222] font-medium flex items-center gap-1.5 transition-colors"
+          className="text-xs text-neutral-700 hover:text-[#94421A] font-semibold flex items-center gap-1.5 transition-colors"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="w-3.5 h-3.5 text-[#94421A]" />
           <span>Volver al campus</span>
         </Link>
-        <span className="text-xs font-semibold text-neutral-900">
-          Perfil de Estudiante
+        <span className="text-xs font-bold text-neutral-900">
+          Cuenta de Estudiante
         </span>
       </header>
 
       {/* Contenido principal */}
       <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm space-y-6 animate-scale-in">
+        <div className="w-full max-w-md bg-white border border-neutral-300/90 rounded-2xl p-6 shadow-skeuo-card space-y-6 animate-scale-in">
           {!currentUser ? (
-            <div className="text-center py-8 space-y-3">
-              <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mx-auto">
-                <User className="w-6 h-6" />
+            /* Sección cuando no hay sesión iniciada: Explicación y Creación Rápida de Cuenta */
+            <div className="space-y-5">
+              <div className="text-center space-y-1.5">
+                <div className="w-11 h-11 rounded-2xl bg-[#EDEAE4] text-neutral-700 flex items-center justify-center mx-auto shadow-skeuo-pill">
+                  <User className="w-5 h-5" />
+                </div>
+                <h1 className="text-sm font-bold text-neutral-900">
+                  Acceso a Slambook
+                </h1>
+                <p className="text-xs text-neutral-500 max-w-xs mx-auto">
+                  Inicia sesión con tu correo institucional (@{campus?.allowedDomain || 'unach.mx'}) para votar y personalizar tu cuenta.
+                </p>
               </div>
-              <p className="text-xs text-neutral-500 max-w-xs mx-auto">
-                Inicia sesión con tu correo institucional para editar tu foto, nombre de usuario y administrar tu cuenta.
-              </p>
-              <Link
-                href={`/${DEFAULT_CAMPUS_SLUG}`}
-                className="inline-block py-2.5 px-5 bg-[#8A4222] text-white text-xs font-medium rounded-xl hover:bg-[#72361b] transition-colors"
+
+              {/* Botón oficial de Google OAuth */}
+              <button
+                type="button"
+                onClick={() => authService.signInWithGoogle(campus?.allowedDomain || 'unach.mx')}
+                className="w-full py-2.5 px-3 bg-[#94421A] hover:bg-[#7D3412] text-white text-xs font-semibold rounded-xl shadow-skeuo-btn active:translate-y-[1px] flex items-center justify-center gap-2 transition-all"
               >
-                Ir al campus
-              </Link>
-            </div>
-          ) : (
-            <form onSubmit={handleSave} className="space-y-5">
-              {/* Sección de Avatar con subida de archivo nativa */}
-              <div className="flex flex-col items-center gap-2.5">
-                <div className="relative group">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-neutral-100 bg-neutral-100 flex items-center justify-center shadow-sm">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt="Avatar del estudiante"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-xl font-bold text-neutral-400">
-                        {username[0]?.toUpperCase() || 'U'}
-                      </span>
-                    )}
-                  </div>
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Iniciar con Google (@{campus?.allowedDomain || 'unach.mx'})</span>
+              </button>
 
-                  {/* Botón flotante para seleccionar archivo desde el dispositivo */}
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 p-2 bg-[#8A4222] hover:bg-[#72361b] text-white rounded-full shadow-md transition-transform hover:scale-105"
-                    title="Subir foto desde tu dispositivo"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                  </button>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </div>
-
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-xs text-[#8A4222] hover:underline font-medium"
-                  >
-                    Subir foto desde dispositivo
-                  </button>
-                </div>
-              </div>
-
-              {/* Selector de avatares predeterminados */}
-              <div>
-                <span className="block text-xs font-medium text-neutral-700 mb-2">
-                  O elige un avatar rápido
+              {/* Formulario para Probar la Creación de Cuenta (Mock / Local Demo) */}
+              <div className="pt-3 border-t border-neutral-200/80 space-y-3">
+                <span className="block text-xs font-bold text-neutral-800">
+                  ¿Cómo probar la creación de una cuenta?
                 </span>
-                <div className="flex gap-2.5 justify-center">
-                  {PRESET_AVATARS.map((url, idx) => (
+                <p className="text-[11px] text-neutral-500 leading-relaxed">
+                  Ingresa cualquier correo institucional simulado (o deja vacío para generar uno aleatorio) y pruébalo al instante:
+                </p>
+
+                <form onSubmit={handleCreateTestAccount} className="space-y-2.5">
+                  <input
+                    type="text"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder={`ej. carlos.mendez@${campus?.allowedDomain || 'unach.mx'}`}
+                    className="w-full px-3 py-2 bg-[#F9F8F6] border border-neutral-300 rounded-xl text-xs text-neutral-900 placeholder:text-neutral-400 shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
+                  />
+                  <input
+                    type="text"
+                    value={testUsername}
+                    onChange={(e) => setTestUsername(e.target.value)}
+                    placeholder="Nombre de usuario (ej. carlos_m)"
+                    className="w-full px-3 py-2 bg-[#F9F8F6] border border-neutral-300 rounded-xl text-xs text-neutral-900 placeholder:text-neutral-400 shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 px-3 bg-white hover:bg-[#FAF9F7] border border-neutral-300 text-neutral-800 text-xs font-semibold rounded-xl shadow-skeuo-btn-neutral active:translate-y-[1px] transition-all"
+                  >
+                    Crear cuenta y entrar
+                  </button>
+                </form>
+
+                {/* Accesos rápidos con un clic */}
+                <div className="pt-1 flex flex-wrap gap-1.5">
+                  {[
+                    `estudiante@${campus?.allowedDomain || 'unach.mx'}`,
+                    `mariana.ing@${campus?.allowedDomain || 'unach.mx'}`,
+                    `diego.quim@${campus?.allowedDomain || 'unach.mx'}`,
+                  ].map((emailSample) => (
                     <button
-                      key={idx}
+                      key={emailSample}
                       type="button"
-                      onClick={() => setAvatarUrl(url)}
-                      className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all ${
-                        avatarUrl === url
-                          ? 'border-[#8A4222] scale-105'
-                          : 'border-transparent opacity-60 hover:opacity-100'
-                      }`}
-                      title={`Avatar ${idx + 1}`}
+                      onClick={() => {
+                        const user = authService.createTestAccount(emailSample);
+                        setCurrentUser(user);
+                        setUsername(user.username || '');
+                        showToast(`Sesión de prueba: ${emailSample}`, 'info');
+                      }}
+                      className="text-[11px] py-1 px-2.5 bg-white border border-neutral-300/80 rounded-lg text-neutral-700 hover:text-neutral-900 hover:border-neutral-400 shadow-sm transition-all"
                     >
-                      <img
-                        src={url}
-                        alt={`Preset ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                      {emailSample.split('@')[0]}
                     </button>
                   ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Sección cuando el usuario tiene sesión activa */
+            <form onSubmit={handleSave} className="space-y-5">
+              <div className="flex items-center gap-3 pb-3 border-b border-neutral-200/80">
+                <div className="w-10 h-10 rounded-xl bg-[#EDEAE4] text-neutral-800 font-extrabold flex items-center justify-center text-sm shadow-skeuo-pill flex-shrink-0">
+                  {username[0]?.toUpperCase() || 'U'}
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-bold text-neutral-900 truncate">
+                    {username}
+                  </h2>
+                  <span className="text-[11px] text-neutral-500 truncate block">
+                    {currentUser.email}
+                  </span>
                 </div>
               </div>
 
               {/* Nombre de usuario (sin fondos ni bordes en labels) */}
               <div>
-                <span className="block text-xs font-medium text-neutral-700 mb-1.5">
+                <span className="block text-xs font-semibold text-neutral-800 mb-1.5">
                   Nombre de usuario
                 </span>
                 <input
@@ -269,20 +244,20 @@ export default function ProfilePage() {
                   onChange={(e) => setUsername(e.target.value)}
                   maxLength={MAX_LENGTHS.USERNAME}
                   placeholder="ej. carlos_m"
-                  className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-none focus:border-[#8A4222] transition-colors"
+                  className="w-full px-3.5 py-2.5 bg-[#F9F8F6] border border-neutral-300 rounded-xl text-xs text-neutral-900 shadow-skeuo-inset focus:outline-none focus:border-[#94421A] transition-colors"
                 />
               </div>
 
               {/* Correo institucional (lectura) */}
               <div>
-                <span className="block text-xs font-medium text-neutral-700 mb-1.5">
+                <span className="block text-xs font-semibold text-neutral-800 mb-1.5">
                   Correo institucional
                 </span>
                 <input
                   type="email"
                   value={currentUser.email}
                   disabled
-                  className="w-full px-3.5 py-2.5 bg-neutral-100/70 border border-neutral-200 rounded-xl text-xs text-neutral-500 cursor-not-allowed select-none"
+                  className="w-full px-3.5 py-2.5 bg-neutral-100 border border-neutral-200 rounded-xl text-xs text-neutral-500 cursor-not-allowed select-none"
                 />
               </div>
 
@@ -291,77 +266,99 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 px-4 bg-[#8A4222] hover:bg-[#72361b] disabled:bg-neutral-300 text-white font-medium rounded-xl text-xs transition-colors shadow-sm"
+                  className="w-full py-2.5 px-4 bg-[#94421A] hover:bg-[#7D3412] disabled:bg-neutral-300 text-white font-semibold rounded-xl text-xs shadow-skeuo-btn active:translate-y-[1px] transition-all flex items-center justify-center gap-1.5"
                 >
-                  {loading ? 'Guardando...' : 'Guardar cambios'}
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{loading ? 'Guardando...' : 'Guardar nombre'}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="w-full py-2.5 px-3 border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl text-xs font-medium transition-colors"
+                  className="w-full py-2.5 px-3 bg-white border border-neutral-300 text-neutral-700 hover:text-neutral-900 hover:bg-[#FAF9F7] rounded-xl text-xs font-semibold shadow-skeuo-btn-neutral active:translate-y-[1px] transition-all"
                 >
                   Cerrar sesión
                 </button>
               </div>
 
-              {/* Zona de peligro: Eliminar cuenta */}
-              <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
-                <span className="text-[11px] text-neutral-400">
-                  ¿Deseas dar de baja tu perfil?
+              {/* Switcher / Crear otra cuenta para pruebas sin salir de la página */}
+              <div className="pt-3 border-t border-neutral-200/80 space-y-2">
+                <span className="block text-[11px] font-semibold text-neutral-600">
+                  Probar con otra cuenta de estudiante:
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="text-xs text-rose-600 hover:text-rose-700 hover:underline font-medium flex items-center gap-1"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Eliminar cuenta</span>
-                </button>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    `estudiante@${campus?.allowedDomain || 'unach.mx'}`,
+                    `carlos.ing@${campus?.allowedDomain || 'unach.mx'}`,
+                    `laura.med@${campus?.allowedDomain || 'unach.mx'}`,
+                  ].map((emailSample) => (
+                    <button
+                      key={emailSample}
+                      type="button"
+                      onClick={() => {
+                        const user = authService.createTestAccount(emailSample);
+                        setCurrentUser(user);
+                        setUsername(user.username || '');
+                        showToast(`Cambiado a sesión: ${emailSample}`, 'info');
+                      }}
+                      className="text-[11px] py-1 px-2.5 bg-white border border-neutral-300/80 rounded-lg text-neutral-700 hover:text-neutral-900 hover:border-neutral-400 shadow-sm transition-all"
+                    >
+                      {emailSample.split('@')[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Zona de peligro: Eliminar cuenta (Confirmación inline sin modales) */}
+              <div className="pt-3 border-t border-neutral-200/80 space-y-3">
+                {!showConfirmDelete ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-neutral-500">
+                      Dar de baja cuenta y votos
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmDelete(true)}
+                      className="text-xs text-rose-600 hover:text-rose-700 hover:underline font-semibold flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Eliminar cuenta</span>
+                    </button>
+                  </div>
+                ) : (
+                  /* Confirmación inline sin modales */
+                  <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-xl space-y-2 animate-fade-in">
+                    <p className="text-xs text-rose-800 font-semibold">
+                      ¿Confirmas eliminar tu cuenta permanentemente?
+                    </p>
+                    <p className="text-[11px] text-rose-600 leading-relaxed">
+                      Se borrará tu perfil y todos los votos que hayas emitido en el campus.
+                    </p>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmDelete(false)}
+                        disabled={isDeleting}
+                        className="flex-1 py-1.5 px-2.5 bg-white border border-neutral-300 text-neutral-700 text-xs font-semibold rounded-lg shadow-sm"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeleteAccount}
+                        disabled={isDeleting}
+                        className="flex-1 py-1.5 px-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm"
+                      >
+                        {isDeleting ? 'Eliminando...' : 'Sí, eliminar'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </form>
           )}
         </div>
       </main>
-
-      {/* Modal de confirmación para eliminar cuenta */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/25 backdrop-blur-[2px] animate-fade-in">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-modal border border-neutral-100 p-6 space-y-4 animate-scale-in">
-            <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-
-            <div className="text-center space-y-1">
-              <h3 className="text-sm font-semibold text-neutral-900">
-                ¿Eliminar cuenta permanentemente?
-              </h3>
-              <p className="text-xs text-neutral-500 leading-relaxed">
-                Esta acción es irreversible. Se eliminará tu perfil y todos los votos que hayas registrado en los rankings universitarios.
-              </p>
-            </div>
-
-            <div className="flex gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(false)}
-                disabled={isDeleting}
-                className="flex-1 py-2.5 px-3 border border-neutral-200 text-neutral-700 hover:bg-neutral-50 rounded-xl text-xs font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteAccount}
-                disabled={isDeleting}
-                className="flex-1 py-2.5 px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-medium transition-colors"
-              >
-                {isDeleting ? 'Eliminando...' : 'Sí, eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

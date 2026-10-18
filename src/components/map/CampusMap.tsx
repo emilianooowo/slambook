@@ -116,12 +116,12 @@ export default function CampusMap({
               let strokeWidth = 1.5;
 
               if (isSelected) {
-                fill = '#8A4222'; // Acento cobrizo casi oscuro
-                stroke = '#6b3319';
+                fill = '#94421A'; // Sienna Bronce
+                stroke = '#753412';
                 strokeWidth = 2.5;
               } else if (isHovered) {
-                fill = '#f8fafc';
-                stroke = '#8A4222';
+                fill = '#FAF9F6';
+                stroke = '#94421A';
                 strokeWidth = 2;
               }
 
@@ -180,16 +180,16 @@ export default function CampusMap({
       </div>
 
       {/* Selectores de Universidad y Campus en la parte inferior */}
-      <footer className="px-4 py-3 border-t border-neutral-100 bg-white flex flex-wrap items-center gap-4 text-xs">
+      <footer className="px-4 py-2.5 border-t border-neutral-200/80 bg-white flex flex-wrap items-center gap-4 text-xs select-none">
         <div className="flex items-center gap-2">
           {/* Label sin fondo ni bordeado */}
-          <span className="text-neutral-500 font-medium whitespace-nowrap">
+          <span className="text-neutral-600 font-semibold whitespace-nowrap">
             Universidad:
           </span>
           <select
             value={currentCampus.universityId}
             onChange={handleUniversitySelect}
-            className="px-2.5 py-1.5 bg-white border border-neutral-200 rounded-md text-neutral-800 text-xs focus:outline-none focus:border-[#8A4222]"
+            className="px-2.5 py-1.5 bg-[#F9F8F6] border border-neutral-300 rounded-xl text-neutral-800 text-xs shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
           >
             {universities.map((u) => (
               <option key={u.id} value={u.id}>
@@ -201,13 +201,13 @@ export default function CampusMap({
 
         <div className="flex items-center gap-2">
           {/* Label sin fondo ni bordeado */}
-          <span className="text-neutral-500 font-medium whitespace-nowrap">
+          <span className="text-neutral-600 font-semibold whitespace-nowrap">
             Campus:
           </span>
           <select
             value={currentCampus.slug}
             onChange={handleCampusSelect}
-            className="px-2.5 py-1.5 bg-white border border-neutral-200 rounded-md text-neutral-800 text-xs focus:outline-none focus:border-[#8A4222]"
+            className="px-2.5 py-1.5 bg-[#F9F8F6] border border-neutral-300 rounded-xl text-neutral-800 text-xs shadow-skeuo-inset focus:outline-none focus:border-[#94421A]"
           >
             {campusesForCurrentUni.map((c) => (
               <option key={c.slug} value={c.slug}>

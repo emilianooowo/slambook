@@ -1,10 +1,10 @@
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { AuthUser, UserProfile } from '@/types/slambook.types';
-import { sanitizeInput, sanitizeImageUrl, isValidUsername, MAX_LENGTHS } from '@/lib/security';
+import { sanitizeInput, isValidUsername, MAX_LENGTHS } from '@/lib/security';
 import { rankingsService } from '@/services/rankings.service';
 
-const MOCK_STORAGE_KEY = 'slambook_mock_user_v2';
-const MOCK_PROFILES_KEY = 'slambook_mock_profiles_v2';
+const MOCK_STORAGE_KEY = 'slambook_mock_user_v3';
+const MOCK_PROFILES_KEY = 'slambook_mock_profiles_v3';
 
 type AuthListener = (user: AuthUser | null) => void;
 
@@ -22,7 +22,7 @@ class AuthService {
             email: session.user.email || '',
             name: profile?.username || session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
             username: profile?.username || session.user.email?.split('@')[0],
-            avatarUrl: profile?.avatarUrl,
+            avatarUrl: '',
             isMock: false,
           };
           this.notify(user);
@@ -47,8 +47,8 @@ class AuthService {
         const profile = await this.getProfile(user.id);
         if (profile) {
           user.username = profile.username;
-          user.avatarUrl = profile.avatarUrl;
         }
+        user.avatarUrl = '';
         return user;
       } catch {
         return null;
@@ -69,7 +69,7 @@ class AuthService {
         email: user.email || '',
         name: profile?.username || user.user_metadata?.full_name || user.email?.split('@')[0],
         username: profile?.username || user.email?.split('@')[0],
-        avatarUrl: profile?.avatarUrl,
+        avatarUrl: '',
         isMock: false,
       };
     } catch (err) {
@@ -109,7 +109,7 @@ class AuthService {
         id: data.id,
         email: data.email,
         username: data.username,
-        avatarUrl: data.avatar_url,
+        avatarUrl: '',
       };
     } catch {
       return null;
@@ -118,7 +118,7 @@ class AuthService {
 
   async updateProfile(
     userId: string,
-    data: { username: string; avatarUrl: string }
+    data: { username: string; avatarUrl?: string }
   ): Promise<UserProfile> {
     if (!userId) {
       throw new Error('ID de usuario requerido.');
@@ -132,8 +132,6 @@ class AuthService {
       throw new Error('El nombre de usuario solo puede contener letras, números, puntos o guiones.');
     }
 
-    const cleanAvatar = sanitizeImageUrl(data.avatarUrl) || '';
-
     const currentUser = await this.getCurrentUser();
     const email = currentUser?.email || '';
 
@@ -141,7 +139,7 @@ class AuthService {
       id: userId,
       email,
       username: cleanUsername,
-      avatarUrl: cleanAvatar,
+      avatarUrl: '',
     };
 
     if (this.isMockMode()) {
@@ -156,10 +154,9 @@ class AuthService {
         profiles[userId] = updatedProfile;
         localStorage.setItem(MOCK_PROFILES_KEY, JSON.stringify(profiles));
 
-        // Actualizar usuario en storage
         if (currentUser) {
           currentUser.username = cleanUsername;
-          currentUser.avatarUrl = cleanAvatar;
+          currentUser.avatarUrl = '';
           localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(currentUser));
           this.notify(currentUser);
         }
@@ -174,7 +171,7 @@ class AuthService {
       id: userId,
       email,
       username: cleanUsername,
-      avatar_url: cleanAvatar,
+      avatar_url: '',
       updated_at: new Date().toISOString(),
     });
 
@@ -184,7 +181,7 @@ class AuthService {
 
     if (currentUser) {
       currentUser.username = cleanUsername;
-      currentUser.avatarUrl = cleanAvatar;
+      currentUser.avatarUrl = '';
       this.notify(currentUser);
     }
 
@@ -197,9 +194,9 @@ class AuthService {
       const mockUser: AuthUser = {
         id: 'mock-user-1',
         email: mockEmail,
-        name: 'Estudiante UNACH',
+        name: 'estudiante.unach',
         username: 'estudiante.unach',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=faces',
+        avatarUrl: '',
         isMock: true,
       };
       if (typeof window !== 'undefined') {
@@ -279,21 +276,50 @@ class AuthService {
     this.notify(null);
   }
 
-  simulateMockLogin(email: string): AuthUser {
-    const cleanEmail = sanitizeInput(email, MAX_LENGTHS.EMAIL);
+  createTestAccount(email: string, customUsername?: string): AuthUser {
+    const cleanEmail = sanitizeInput(email, MAX_LENGTHS.EMAIL).toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new Error('Ingresa un correo institucional válido (ej. estudiante@unach.mx)');
+    }
+
+    const rawUsername = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '_');
+    const cleanUsername = customUsername
+      ? sanitizeInput(customUsername, MAX_LENGTHS.USERNAME)
+      : rawUsername;
+
     const mockUser: AuthUser = {
-      id: `mock-${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`,
+      id: `usr-${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`,
       email: cleanEmail,
-      name: cleanEmail.split('@')[0],
-      username: cleanEmail.split('@')[0],
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=faces',
+      name: cleanUsername,
+      username: cleanUsername,
+      avatarUrl: '',
       isMock: true,
     };
+
     if (typeof window !== 'undefined') {
       localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(mockUser));
+      try {
+        let profiles: Record<string, UserProfile> = {};
+        const stored = localStorage.getItem(MOCK_PROFILES_KEY);
+        if (stored) profiles = JSON.parse(stored);
+        profiles[mockUser.id] = {
+          id: mockUser.id,
+          email: cleanEmail,
+          username: cleanUsername,
+          avatarUrl: '',
+        };
+        localStorage.setItem(MOCK_PROFILES_KEY, JSON.stringify(profiles));
+      } catch {
+        // ignore
+      }
     }
+
     this.notify(mockUser);
     return mockUser;
+  }
+
+  simulateMockLogin(email: string): AuthUser {
+    return this.createTestAccount(email);
   }
 
   onAuthStateChange(callback: AuthListener): () => void {
