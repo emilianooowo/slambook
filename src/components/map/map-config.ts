@@ -55,15 +55,15 @@ export const MAP_COLORS: Record<MapThemeMode, MapThemeColors> = {
 export const INITIAL_VIEW_STATE = {
   longitude: -93.1545,
   latitude: 16.7540,
-  zoom: 16.6,
-  pitch: 40,
-  bearing: -10,
+  zoom: 16.4,
+  pitch: 20,
+  bearing: 0,
 };
 
 export const MAP_BOUNDS = {
-  // Delimita el paneo para que no se aleje del Campus I [minLng, minLat, maxLng, maxLat]
-  maxBounds: [-93.1670, 16.7450, -93.1420, 16.7630] as [number, number, number, number],
-  minZoom: 14.5,
+  // Delimita el paneo holgado sobre Tuxtla Gutiérrez y Campus I [minLng, minLat, maxLng, maxLat]
+  maxBounds: [-93.2000, 16.7200, -93.1100, 16.7900] as [number, number, number, number],
+  minZoom: 13,
   maxZoom: 19,
 };
 

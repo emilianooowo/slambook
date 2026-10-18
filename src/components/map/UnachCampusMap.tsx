@@ -182,7 +182,14 @@ function UnachCampusMapInternal({
         colors.fillHover,
         colors.fill,
       ],
-      'fill-opacity': 0.92,
+      'fill-opacity': [
+        'case',
+        ['==', ['get', 'slug'], selectedFacultyId || ''],
+        0.88,
+        ['boolean', ['feature-state', 'hover'], false],
+        0.78,
+        0.65,
+      ],
     },
   };
 
