@@ -15,88 +15,50 @@ export async function GET(request: Request) {
     let results: any[] = [];
 
     if (type === 'movie') {
-      // 1. Películas: Búsqueda prioritaria en México, fallback a internacional
-      let url = `https://itunes.apple.com/search?term=${encodeURIComponent(
-        term
-      )}&media=movie&entity=movie&limit=10&country=MX`;
-
-      let res = await fetch(url, { next: { revalidate: 3600 } });
-      let data = res.ok ? await res.json() : { results: [] };
-
-      if (!data.results || data.results.length === 0) {
-        url = `https://itunes.apple.com/search?term=${encodeURIComponent(
-          term
-        )}&media=movie&entity=movie&limit=10&country=US`;
-        res = await fetch(url, { next: { revalidate: 3600 } });
-        if (res.ok) data = await res.json();
-      }
-
-      results = (data.results || []).map((item: any) => {
-        const year = item.releaseDate ? item.releaseDate.substring(0, 4) : '';
-        const poster = item.artworkUrl100
-          ? item.artworkUrl100.replace('100x100bb', '600x600bb')
-          : undefined;
-
-        return {
-          id: String(item.trackId || Math.random()),
-          title: item.trackName || 'Sin título',
-          subtitle: year ? `${year} · Película` : 'Película',
-          type: 'movie',
-          imageUrl: poster,
-        };
-      });
-    } else if (type === 'artist') {
-      // 2. Artistas: Buscar álbumes del artista para obtener el arte/fotografía oficial nítida
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(
-        term
-      )}&media=music&entity=album&limit=15&country=MX`;
-
+      // 1. Películas: Cinemeta API abierta (catálogo oficial IMDb / Amazon Posters)
+      const url = `https://v3-cinemeta.strem.io/catalog/movie/top/search=${encodeURIComponent(term)}.json`;
       const res = await fetch(url, { next: { revalidate: 3600 } });
-      const data = res.ok ? await res.json() : { results: [] };
 
-      const seen = new Set<string>();
-      for (const item of data.results || []) {
-        const artistName = (item.artistName || '').trim();
-        const lower = artistName.toLowerCase();
-        if (!artistName || seen.has(lower)) continue;
-        seen.add(lower);
+      if (res.ok) {
+        const data = await res.json();
+        results = (data.metas || []).slice(0, 8).map((item: any) => ({
+          id: item.id || String(Math.random()),
+          title: item.name || 'Sin título',
+          subtitle: item.releaseInfo ? `${item.releaseInfo} · Película` : 'Película',
+          type: 'movie',
+          imageUrl: item.poster || undefined,
+        }));
+      }
+    } else if (type === 'artist') {
+      // 2. Artistas: Deezer API oficial (Fotografías reales de estudio del artista)
+      const url = `https://api.deezer.com/search/artist?q=${encodeURIComponent(term)}&limit=8`;
+      const res = await fetch(url, { next: { revalidate: 3600 } });
 
-        const img = item.artworkUrl100
-          ? item.artworkUrl100.replace('100x100bb', '600x600bb')
-          : undefined;
-
-        results.push({
-          id: String(item.artistId || item.collectionId || Math.random()),
-          title: artistName,
-          subtitle: item.primaryGenreName || 'Música',
+      if (res.ok) {
+        const data = await res.json();
+        results = (data.data || []).map((item: any) => ({
+          id: String(item.id),
+          title: item.name,
+          subtitle: 'Artista',
           type: 'artist',
-          imageUrl: img,
-        });
-
-        if (results.length >= 8) break;
+          imageUrl: item.picture_big || item.picture_medium || undefined,
+        }));
       }
     } else {
-      // 3. Canciones
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(
-        term
-      )}&media=music&entity=song&limit=10&country=MX`;
-
+      // 3. Canciones: Deezer API oficial (Carátulas oficiales de sencillos y álbumes)
+      const url = `https://api.deezer.com/search?q=${encodeURIComponent(term)}&limit=8`;
       const res = await fetch(url, { next: { revalidate: 3600 } });
-      const data = res.ok ? await res.json() : { results: [] };
 
-      results = (data.results || []).map((item: any) => {
-        const cover = item.artworkUrl100
-          ? item.artworkUrl100.replace('100x100bb', '600x600bb')
-          : undefined;
-
-        return {
-          id: String(item.trackId || item.collectionId || Math.random()),
-          title: item.trackName || 'Sin título',
-          subtitle: item.artistName || 'Artista desconocido',
+      if (res.ok) {
+        const data = await res.json();
+        results = (data.data || []).map((item: any) => ({
+          id: String(item.id),
+          title: item.title,
+          subtitle: item.artist?.name || 'Artista',
           type: 'song',
-          imageUrl: cover,
-        };
-      });
+          imageUrl: item.album?.cover_big || item.album?.cover_medium || item.artist?.picture_big || undefined,
+        }));
+      }
     }
 
     return NextResponse.json({ results });

@@ -13,7 +13,7 @@ import {
 import { sanitizeInput, sanitizeImageUrl, MAX_LENGTHS } from '@/lib/security';
 import { getCampusBySlug } from '@/config/campuses';
 
-const MOCK_SUBMISSIONS_KEY = 'slambook_mock_submissions_v4';
+const MOCK_SUBMISSIONS_KEY = 'slambook_mock_submissions_v5';
 
 export function getTodayDateString(): string {
   const now = new Date();
@@ -45,7 +45,7 @@ class RankingsService {
       try {
         return JSON.parse(existing);
       } catch {
-        // En caso de corrupción, reinicializamos
+        // Regenerar si hay error
       }
     }
 
@@ -53,10 +53,9 @@ class RankingsService {
     const twoDaysAgo = getDateDaysAgoString(2);
     const fourDaysAgo = getDateDaysAgoString(4);
     const tenDaysAgo = getDateDaysAgoString(10);
-    const fifteenDaysAgo = getDateDaysAgoString(15);
 
     const initialMock: DailySubmission[] = [
-      // INGENIERÍA - Hoy
+      // INGENIERÍA
       {
         id: 'sub-ing-1',
         campus_slug: 'unach-tuxtla',
@@ -65,12 +64,12 @@ class RankingsService {
         user_email: 'carlos.m@unach.mx',
         username: 'carlos_m',
         user_avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=faces',
-        song: 'Starboy (The Weeknd)',
-        song_image_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop',
+        song: 'Starboy',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/134778e4c4f19ea71c82408300925a9a/500x500-000000-80-0-0.jpg',
         artist: 'The Weeknd',
-        artist_image_url: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=300&h=300&fit=crop&crop=faces',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/581693b4724a7fcfa754455101e13a44/500x500-000000-80-0-0.jpg',
         movie: 'Interstellar',
-        movie_image_url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=450&fit=crop',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_SX250.jpg',
         submission_date: today,
         created_at: new Date().toISOString(),
       },
@@ -82,12 +81,12 @@ class RankingsService {
         user_email: 'valeria.r@unach.mx',
         username: 'valeria_r',
         user_avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces',
-        song: 'Starboy (The Weeknd)',
-        song_image_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop',
+        song: 'Starboy',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/134778e4c4f19ea71c82408300925a9a/500x500-000000-80-0-0.jpg',
         artist: 'Daft Punk',
-        artist_image_url: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&h=300&fit=crop',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/33c9489f727806a6b5790be9d52b1bdf/500x500-000000-80-0-0.jpg',
         movie: 'Interstellar',
-        movie_image_url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=450&fit=crop',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_SX250.jpg',
         submission_date: today,
         created_at: new Date().toISOString(),
       },
@@ -99,16 +98,15 @@ class RankingsService {
         user_email: 'jorge.g@unach.mx',
         username: 'jorge_ing',
         user_avatar_url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&crop=faces',
-        song: 'De Música Ligera (Soda Stereo)',
-        song_image_url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop',
+        song: 'De Música Ligera',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/77243c4155b46e33aaec67f4153cfecf/500x500-000000-80-0-0.jpg',
         artist: 'Soda Stereo',
-        artist_image_url: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=300&h=300&fit=crop',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/4312015faadab856d10db9f1ce2bc37b/500x500-000000-80-0-0.jpg',
         movie: 'Blade Runner 2049',
-        movie_image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&h=450&fit=crop',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BNzA1Njg4NzYxOV5BMl5BanBnXkFtZTgwODk5NjU3MzI@._V1_SX250.jpg',
         submission_date: today,
         created_at: new Date().toISOString(),
       },
-      // INGENIERÍA - Esta semana
       {
         id: 'sub-ing-4',
         campus_slug: 'unach-tuxtla',
@@ -117,12 +115,12 @@ class RankingsService {
         user_email: 'ana.l@unach.mx',
         username: 'ana_luisa',
         user_avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
-        song: 'Starboy (The Weeknd)',
-        song_image_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop',
+        song: 'Starboy',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/134778e4c4f19ea71c82408300925a9a/500x500-000000-80-0-0.jpg',
         artist: 'Daft Punk',
-        artist_image_url: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&h=300&fit=crop',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/33c9489f727806a6b5790be9d52b1bdf/500x500-000000-80-0-0.jpg',
         movie: 'Interstellar',
-        movie_image_url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=450&fit=crop',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_SX250.jpg',
         submission_date: twoDaysAgo,
         created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
       },
@@ -134,12 +132,12 @@ class RankingsService {
         user_email: 'roberto.s@unach.mx',
         username: 'roberto_s',
         user_avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces',
-        song: 'Bohemian Rhapsody (Queen)',
-        song_image_url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop',
+        song: 'Bohemian Rhapsody',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/855365315b49d4142ca4b1c7b8979149/500x500-000000-80-0-0.jpg',
         artist: 'Queen',
-        artist_image_url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/6b1d4c7283628e932338c237f3737b98/500x500-000000-80-0-0.jpg',
         movie: 'Spider-Man: Into the Spider-Verse',
-        movie_image_url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=300&h=450&fit=crop',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BMjMwNDkxMTgyNV5BMl5BanBnXkFtZTgwNjkwNTM3NjM@._V1_SX250.jpg',
         submission_date: fourDaysAgo,
         created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
       },
@@ -153,12 +151,12 @@ class RankingsService {
         user_email: 'elena.arq@unach.mx',
         username: 'elena_arq',
         user_avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop&crop=faces',
-        song: 'Ojitos Lindos (Bad Bunny)',
-        song_image_url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop',
+        song: 'Ojitos Lindos',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/f0e6332152869502ea8245ea3d6f1947/500x500-000000-80-0-0.jpg',
         artist: 'Bad Bunny',
-        artist_image_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&h=300&fit=crop&crop=faces',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/9867d5112c6714c935a86b98b4dd288c/500x500-000000-80-0-0.jpg',
         movie: 'Parasite',
-        movie_image_url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=300&h=450&fit=crop',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00MGU5LWE3NmUtYzBlMWFmZTE1NDAtXkEyXkFqcGc@._V1_SX250.jpg',
         submission_date: today,
         created_at: new Date().toISOString(),
       },
@@ -170,12 +168,12 @@ class RankingsService {
         user_email: 'diego.t@unach.mx',
         username: 'diego_t',
         user_avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces',
-        song: 'Ojitos Lindos (Bad Bunny)',
-        song_image_url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop',
+        song: 'Ojitos Lindos',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/f0e6332152869502ea8245ea3d6f1947/500x500-000000-80-0-0.jpg',
         artist: 'Bad Bunny',
-        artist_image_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&h=300&fit=crop&crop=faces',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/9867d5112c6714c935a86b98b4dd288c/500x500-000000-80-0-0.jpg',
         movie: 'Interstellar',
-        movie_image_url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=450&fit=crop',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_SX250.jpg',
         submission_date: twoDaysAgo,
         created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
       },
@@ -189,12 +187,12 @@ class RankingsService {
         user_email: 'fernando.fca@unach.mx',
         username: 'fernando_fca',
         user_avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=faces',
-        song: 'La Incondicional (Luis Miguel)',
-        song_image_url: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&h=300&fit=crop',
+        song: 'La Incondicional',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/ce89c8a7e3ce010ff77028ce3722b9b7/500x500-000000-80-0-0.jpg',
         artist: 'Luis Miguel',
-        artist_image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=faces',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/45133d13264c9f13bf6fdbfc35a2eb2a/500x500-000000-80-0-0.jpg',
         movie: 'Oppenheimer',
-        movie_image_url: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=300&h=450&fit=crop',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BN2JkMDc5MGQtZjg3YS00NmFiLWIyZmQtZTJmNTM5MjVmYTQ4XkEyXkFqcGc@._V1_SX250.jpg',
         submission_date: today,
         created_at: new Date().toISOString(),
       },
@@ -206,12 +204,12 @@ class RankingsService {
         user_email: 'patricia.fca@unach.mx',
         username: 'paty_fca',
         user_avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces',
-        song: 'Starboy (The Weeknd)',
-        song_image_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop',
+        song: 'Starboy',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/134778e4c4f19ea71c82408300925a9a/500x500-000000-80-0-0.jpg',
         artist: 'The Weeknd',
-        artist_image_url: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=300&h=300&fit=crop&crop=faces',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/581693b4724a7fcfa754455101e13a44/500x500-000000-80-0-0.jpg',
         movie: 'Oppenheimer',
-        movie_image_url: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=300&h=450&fit=crop',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BN2JkMDc5MGQtZjg3YS00NmFiLWIyZmQtZTJmNTM5MjVmYTQ4XkEyXkFqcGc@._V1_SX250.jpg',
         submission_date: tenDaysAgo,
         created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
       },
@@ -225,12 +223,12 @@ class RankingsService {
         user_email: 'marian.len@unach.mx',
         username: 'marian_len',
         user_avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
-        song: 'Cruel Summer (Taylor Swift)',
-        song_image_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop',
+        song: 'Cruel Summer',
+        song_image_url: 'https://cdn-images.dzcdn.net/images/cover/5f6176ea3e45daecbe046a67f1b73c4f/500x500-000000-80-0-0.jpg',
         artist: 'Taylor Swift',
-        artist_image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=faces',
-        movie: 'El Viaje de Chihiro',
-        movie_image_url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300&h=450&fit=crop',
+        artist_image_url: 'https://cdn-images.dzcdn.net/images/artist/f1981a329d499e9dc76711a147e4eb12/500x500-000000-80-0-0.jpg',
+        movie: 'Parasite',
+        movie_image_url: 'https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00MGU5LWE3NmUtYzBlMWFmZTE1NDAtXkEyXkFqcGc@._V1_SX250.jpg',
         submission_date: today,
         created_at: new Date().toISOString(),
       },
@@ -457,9 +455,6 @@ class RankingsService {
     return results;
   }
 
-  /**
-   * Busca la posición en el ranking de cualquier entidad en All-Time
-   */
   async searchEntityRanking(
     campusSlug: string,
     query: string,
@@ -484,13 +479,11 @@ class RankingsService {
       }
     }
 
-    // Mapa de facultades para nombres amigables
     const facultyNames = new Map<string, string>();
     if (campus) {
       campus.faculties.forEach((f) => facultyNames.set(f.id, f.name));
     }
 
-    // 1. Obtener todas las entidades únicas
     const entityMap = new Map<string, { type: MediaType; imageUrl?: string }>();
 
     for (const sub of allSubmissions) {
@@ -514,7 +507,6 @@ class RankingsService {
       }
     }
 
-    // 2. Calcular los rankings generales de cada categoría All-Time para saber la posición absoluta
     const computeCategoryRanks = (type: MediaType) => {
       const counts: Record<string, number> = {};
       for (const sub of allSubmissions) {
@@ -533,20 +525,17 @@ class RankingsService {
     const artistRanks = computeCategoryRanks('artist');
     const movieRanks = computeCategoryRanks('movie');
 
-    // 3. Filtrar entidades que coincidan con la búsqueda del usuario
     const results: EntityRankingDetail[] = [];
 
     for (const [key, meta] of Array.from(entityMap.entries())) {
       const [type, rawName] = key.split(':');
       if (!rawName.includes(q)) continue;
 
-      // Buscar ranking general del campus
       const table = type === 'song' ? songRanks : type === 'artist' ? artistRanks : movieRanks;
       const foundRank = table.find((item) => item.name === rawName);
       const campusRank = foundRank ? foundRank.rank : 999;
       const totalCampusVotes = foundRank ? foundRank.votes : 0;
 
-      // Calcular desglose por facultad
       const facultyCounts: Record<string, number> = {};
       for (const sub of allSubmissions) {
         const val = type === 'song' ? sub.song : type === 'artist' ? sub.artist : sub.movie;
@@ -555,9 +544,7 @@ class RankingsService {
         }
       }
 
-      // Ranking relativo en cada facultad
       const facultyBreakdowns = Object.entries(facultyCounts).map(([fId, votes]) => {
-        // Calcular puesto dentro de esa facultad
         const facultySubs = allSubmissions.filter((s) => s.faculty_id === fId);
         const fCounts: Record<string, number> = {};
         for (const s of facultySubs) {
@@ -578,7 +565,6 @@ class RankingsService {
         };
       });
 
-      // Capitalización para visualización
       const originalSub = allSubmissions.find((s) => {
         const v = type === 'song' ? s.song : type === 'artist' ? s.artist : s.movie;
         return v && v.trim().toLowerCase() === rawName;
@@ -600,9 +586,6 @@ class RankingsService {
     return results.sort((a, b) => a.campusRank - b.campusRank);
   }
 
-  /**
-   * Obtiene la tabla de líderes All-Time de todo el campus
-   */
   async getAllTimeLeaderboard(campusSlug: string, type: MediaType, limit = 10): Promise<RankingItem[]> {
     let allSubmissions: DailySubmission[] = [];
 
