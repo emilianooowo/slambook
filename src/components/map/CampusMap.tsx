@@ -1,19 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
-import {
-  MAP_VIEWBOX,
-  UNACH_FACULTIES_DATA,
-  UNACH_ROAD_LABELS,
-  UNACH_ROAD_PATHS,
-} from './unach-map-data';
+import React from 'react';
+import UnachCampusMap from './UnachCampusMap';
 import {
   getAllUniversities,
   getCampusesByUniversity,
 } from '@/config/campuses';
 import { CampusConfig } from '@/types/slambook.types';
 
-interface CampusMapProps {
+export interface CampusMapProps {
   selectedFacultyId: string | null;
   onSelectFaculty: (facultyId: string) => void;
   currentCampus: CampusConfig;
@@ -28,10 +23,6 @@ export default function CampusMap({
   onCampusChange,
   className = '',
 }: CampusMapProps) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-
-  const hoveredFaculty = UNACH_FACULTIES_DATA.find((f) => f.id === hoveredId);
-
   const universities = getAllUniversities();
   const campusesForCurrentUni = getCampusesByUniversity(currentCampus.universityId);
 
@@ -48,139 +39,18 @@ export default function CampusMap({
   };
 
   return (
-    <div
-      className={`relative w-full h-full flex flex-col bg-white border border-neutral-200 rounded-xl overflow-hidden select-none ${className}`}
-    >
-      {/* Barra superior de estado sin bordes ni fondos en labels */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100 bg-white text-xs text-neutral-600">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-neutral-900">{currentCampus.shortName}</span>
-          <span className="text-neutral-300">/</span>
-          <span className="text-neutral-500">
-            {selectedFacultyId ? selectedFacultyId.toUpperCase() : 'Ninguna seleccionada'}
-          </span>
-        </div>
-        <div className="text-xs text-neutral-400">
-          {hoveredFaculty ? hoveredFaculty.name : 'Haz clic en una facultad'}
-        </div>
-      </div>
-
-      {/* SVG del Mapa en estilo claro minimalista */}
-      <div className="relative flex-1 w-full h-full p-4 flex items-center justify-center overflow-hidden bg-[#fafafa]">
-        <svg
-          viewBox={`0 0 ${MAP_VIEWBOX.width} ${MAP_VIEWBOX.height}`}
-          className="w-full h-full max-h-full object-contain"
-          preserveAspectRatio="xMidYMid meet"
-          role="region"
-          aria-label="Plano de facultades"
-        >
-          {/* Calles */}
-          <g id="roads" className="pointer-events-none">
-            {UNACH_ROAD_PATHS.map((road) => (
-              <path
-                key={road.id}
-                d={road.d}
-                stroke={road.kind === 'major' ? '#e2e8f0' : '#edf2f7'}
-                strokeWidth={road.strokeWidth}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            ))}
-            {UNACH_ROAD_LABELS.map((label) => (
-              <text
-                key={label.id}
-                x={label.x}
-                y={label.y}
-                transform={`rotate(${label.rotation} ${label.x} ${label.y})`}
-                fill="#94a3b8"
-                fontSize="11"
-                fontFamily="system-ui, sans-serif"
-                fontWeight="500"
-                letterSpacing="0.06em"
-                textAnchor="middle"
-              >
-                {label.text}
-              </text>
-            ))}
-          </g>
-
-          {/* Polígonos de Facultades */}
-          <g id="faculties">
-            {UNACH_FACULTIES_DATA.map((faculty) => {
-              const isSelected = selectedFacultyId === faculty.id;
-              const isHovered = hoveredId === faculty.id;
-
-              let fill = '#ffffff';
-              let stroke = '#cbd5e1';
-              let strokeWidth = 1.5;
-
-              if (isSelected) {
-                fill = '#94421A'; // Sienna Bronce
-                stroke = '#753412';
-                strokeWidth = 2.5;
-              } else if (isHovered) {
-                fill = '#FAF9F6';
-                stroke = '#94421A';
-                strokeWidth = 2;
-              }
-
-              return (
-                <path
-                  key={faculty.id}
-                  id={`faculty-${faculty.id}`}
-                  d={faculty.svgPath}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={isSelected}
-                  aria-label={faculty.name}
-                  onClick={() => onSelectFaculty(faculty.id)}
-                  onMouseEnter={() => setHoveredId(faculty.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                  onFocus={() => setHoveredId(faculty.id)}
-                  onBlur={() => setHoveredId(null)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onSelectFaculty(faculty.id);
-                    }
-                  }}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={strokeWidth}
-                  strokeLinejoin="round"
-                  className="cursor-pointer transition-colors duration-150 outline-none"
-                />
-              );
-            })}
-          </g>
-
-          {/* Rótulos de Facultades */}
-          <g id="labels" className="pointer-events-none select-none">
-            {UNACH_FACULTIES_DATA.map((faculty) => {
-              const isSelected = selectedFacultyId === faculty.id;
-              return (
-                <text
-                  key={`label-${faculty.id}`}
-                  x={faculty.labelCoords.x}
-                  y={faculty.labelCoords.y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontFamily="system-ui, sans-serif"
-                  fontSize="13"
-                  fontWeight="600"
-                  fill={isSelected ? '#ffffff' : '#334155'}
-                >
-                  {faculty.shortName}
-                </text>
-              );
-            })}
-          </g>
-        </svg>
+    <div className={`relative w-full h-full flex flex-col bg-white overflow-hidden ${className}`}>
+      {/* Contenedor del Mapa MapLibre GL interactivo */}
+      <div className="flex-1 w-full h-full min-h-0 relative">
+        <UnachCampusMap
+          selectedFacultyId={selectedFacultyId}
+          onSelectFaculty={onSelectFaculty}
+          className="w-full h-full"
+        />
       </div>
 
       {/* Selectores de Universidad y Campus en la parte inferior */}
-      <footer className="px-4 py-2.5 border-t border-neutral-200/80 bg-white flex flex-wrap items-center gap-4 text-xs select-none">
+      <footer className="px-4 py-2.5 border-t border-neutral-200/80 bg-white flex flex-wrap items-center gap-4 text-xs select-none flex-shrink-0 z-10 shadow-sm">
         <div className="flex items-center gap-2">
           {/* Label sin fondo ni bordeado */}
           <span className="text-neutral-600 font-semibold whitespace-nowrap">
@@ -220,3 +90,5 @@ export default function CampusMap({
     </div>
   );
 }
+
+export { UnachCampusMap };
